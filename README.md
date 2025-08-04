@@ -9,6 +9,10 @@ Um chatbot inteligente para WhatsApp que integra com Typebot e sistema GestãoDS
 - **GestãoDS CRM**: Gerenciamento de leads e oportunidades
 - **Memory Store**: Gerenciamento de estado das conversas
 - **Webhook**: Endpoint para receber mensagens do Z-API
+- **Agendamento de Consultas**: Sistema completo de agendamento
+- **Visualização de Agendamentos**: Lista agendamentos futuros (120 dias)
+- **Reagendamento**: Permite alterar data/hora de consultas
+- **Cancelamento**: Interface para cancelar consultas
 
 ## 📁 Estrutura do Projeto
 
@@ -60,6 +64,11 @@ whatsapp-chatbot/
    npm start
    ```
 
+5. **Teste a funcionalidade de agendamentos**
+   ```bash
+   node teste-agendamentos.js
+   ```
+
 ## 🔧 Configuração
 
 ### Z-API Setup
@@ -78,6 +87,38 @@ whatsapp-chatbot/
 1. Configure sua conta no GestãoDS
 2. Obtenha sua API Key e Company ID
 3. Configure as variáveis de ambiente
+
+## 📅 Sistema de Agendamentos
+
+### Visualização de Agendamentos
+O sistema permite visualizar agendamentos futuros dos pacientes com as seguintes funcionalidades:
+
+- **Busca por CPF**: Filtra agendamentos específicos do paciente
+- **Período de 120 dias**: Mostra agendamentos de hoje até 120 dias no futuro
+- **Opções de ação**: Reagendar, Cancelar ou Voltar ao menu
+- **Integração com API**: Usa a API `/listagem/{token}` do GestãoDS
+
+### Fluxo de Visualização
+1. Usuário digita "ver agendamentos" ou seleciona opção 2 no menu
+2. Sistema solicita CPF do paciente
+3. Confirma identidade do paciente
+4. Lista agendamentos futuros com numeração
+5. Permite selecionar agendamento para ação
+6. Oferece opções: Reagendar, Cancelar ou Voltar
+
+### API de Agendamentos
+```
+GET https://apidev.gestaods.com.br/api/dados-agendamento/listagem/{token}
+```
+
+**Parâmetros:**
+- `data_inicial`: Data atual (DD/MM/YYYY)
+- `data_final`: Data atual + 120 dias (DD/MM/YYYY)
+
+**Exemplo:**
+```
+GET /listagem/{token}?data_inicial=04/08/2025&data_final=03/09/2025
+```
 
 ## 📡 API Endpoints
 
