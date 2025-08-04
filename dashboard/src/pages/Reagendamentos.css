@@ -1,0 +1,224 @@
+.reagendamentos {
+  padding: 2rem;
+  margin-left: 280px;
+  min-height: 100vh;
+  background: #f8f9fa;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.page-header h1 {
+  margin: 0;
+  font-size: 2rem;
+  color: #333;
+  font-weight: 600;
+}
+
+.refresh-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.refresh-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.error-message {
+  background: #f8d7da;
+  color: #721c24;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+  border: 1px solid #f5c6cb;
+}
+
+.reagendamentos-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.reagendamento-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+.reagendamento-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.reagendamento-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.paciente-info h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.2rem;
+  color: #333;
+  font-weight: 600;
+}
+
+.paciente-info p {
+  margin: 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.datas-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 8px;
+}
+
+.data-atual, .nova-data {
+  flex: 1;
+}
+
+.data-atual h4, .nova-data h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.9rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.data-atual p, .nova-data p {
+  margin: 0;
+  font-size: 1rem;
+  color: #333;
+  font-weight: 600;
+}
+
+.seta {
+  font-size: 1.5rem;
+  color: #667eea;
+  font-weight: bold;
+}
+
+.motivo-info h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.9rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.motivo-info p {
+  margin: 0;
+  color: #333;
+  font-size: 0.9rem;
+}
+
+.reagendamento-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.btn-aprovar, .btn-rejeitar {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn-aprovar {
+  background: #28a745;
+  color: white;
+}
+
+.btn-aprovar:hover {
+  background: #218838;
+  transform: translateY(-1px);
+}
+
+.btn-rejeitar {
+  background: #dc3545;
+  color: white;
+}
+
+.btn-rejeitar:hover {
+  background: #c82333;
+  transform: translateY(-1px);
+}
+
+.no-reagendamentos {
+  text-align: center;
+  padding: 3rem;
+  background: white;
+  border-radius: 12px;
+  color: #666;
+}
+
+.no-reagendamentos p {
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .reagendamentos {
+    margin-left: 0;
+    padding: 1rem;
+  }
+  
+  .page-header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+  
+  .page-header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .reagendamento-card {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+  
+  .datas-info {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .seta {
+    transform: rotate(90deg);
+  }
+  
+  .reagendamento-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+  
+  .btn-aprovar, .btn-rejeitar {
+    flex: 1;
+  }
+} 

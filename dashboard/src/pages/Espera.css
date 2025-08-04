@@ -1,0 +1,209 @@
+.espera {
+  padding: 2rem;
+  margin-left: 280px;
+  min-height: 100vh;
+  background: #f8f9fa;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.page-header h1 {
+  margin: 0;
+  font-size: 2rem;
+  color: #333;
+  font-weight: 600;
+}
+
+.refresh-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.refresh-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.error-message {
+  background: #f8d7da;
+  color: #721c24;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+  border: 1px solid #f5c6cb;
+}
+
+.espera-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.espera-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+.espera-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.espera-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.paciente-info h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.2rem;
+  color: #333;
+  font-weight: 600;
+}
+
+.paciente-info p {
+  margin: 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.especialidade-info p {
+  margin: 0 0 0.25rem 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.especialidade-info strong {
+  color: #333;
+}
+
+.prioridade-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-left: 0.5rem;
+}
+
+.prioridade-badge.alta {
+  background: #dc3545;
+  color: white;
+}
+
+.prioridade-badge.media {
+  background: #ffc107;
+  color: #333;
+}
+
+.prioridade-badge.baixa {
+  background: #28a745;
+  color: white;
+}
+
+.espera-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.btn-contatar, .btn-agendar {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn-contatar {
+  background: #17a2b8;
+  color: white;
+}
+
+.btn-contatar:hover {
+  background: #138496;
+  transform: translateY(-1px);
+}
+
+.btn-agendar {
+  background: #28a745;
+  color: white;
+}
+
+.btn-agendar:hover {
+  background: #218838;
+  transform: translateY(-1px);
+}
+
+.no-espera {
+  text-align: center;
+  padding: 3rem;
+  background: white;
+  border-radius: 12px;
+  color: #666;
+}
+
+.no-espera p {
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .espera {
+    margin-left: 0;
+    padding: 1rem;
+  }
+  
+  .page-header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+  
+  .page-header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .espera-card {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+  
+  .espera-info {
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+  }
+  
+  .espera-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+  
+  .btn-contatar, .btn-agendar {
+    flex: 1;
+  }
+} 

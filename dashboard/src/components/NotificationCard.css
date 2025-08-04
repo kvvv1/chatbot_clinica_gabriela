@@ -1,0 +1,108 @@
+.notification-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1rem;
+  transition: all 0.3s ease;
+  position: relative;
+  border-left: 4px solid #667eea;
+}
+
+.notification-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.notification-card.agendamento {
+  border-left-color: #28a745;
+}
+
+.notification-card.reagendamento {
+  border-left-color: #ffc107;
+}
+
+.notification-card.cancelamento {
+  border-left-color: #dc3545;
+}
+
+.notification-card.paciente {
+  border-left-color: #17a2b8;
+}
+
+.notification-card.secretaria {
+  border-left-color: #6f42c1;
+}
+
+.notification-icon {
+  font-size: 1.5rem;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8f9fa;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.notification-content {
+  flex: 1;
+}
+
+.notification-content h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.notification-content p {
+  margin: 0 0 0.5rem 0;
+  color: #666;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.notification-time {
+  font-size: 0.8rem;
+  color: #999;
+  font-weight: 500;
+}
+
+.priority-badge {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: #dc3545;
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .notification-card {
+    padding: 0.75rem;
+  }
+  
+  .notification-icon {
+    width: 35px;
+    height: 35px;
+    font-size: 1.2rem;
+  }
+  
+  .notification-content h4 {
+    font-size: 0.9rem;
+  }
+  
+  .notification-content p {
+    font-size: 0.8rem;
+  }
+} 
