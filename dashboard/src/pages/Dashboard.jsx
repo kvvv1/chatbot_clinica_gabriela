@@ -47,8 +47,8 @@ export default function Dashboard() {
         {
           id: 1,
           type: 'paciente',
-          title: 'Novo paciente cadastrado',
-          message: 'João da Silva foi cadastrado via chatbot',
+          title: 'Novo paciente',
+          message: 'João Silva cadastrado',
           timestamp: new Date(Date.now() - 5 * 60 * 1000),
           priority: 'normal'
         },
@@ -56,15 +56,15 @@ export default function Dashboard() {
           id: 2,
           type: 'agendamento',
           title: 'Agendamento confirmado',
-          message: 'Ana Lima confirmou agendamento para 10:00',
+          message: 'Ana Lima - 10:00',
           timestamp: new Date(Date.now() - 15 * 60 * 1000),
           priority: 'normal'
         },
         {
           id: 3,
           type: 'secretaria',
-          title: 'Atendimento manual iniciado',
-          message: 'Paciente +55 31 91234-5678 solicitou atendimento',
+          title: 'Atendimento manual',
+          message: '+55 31 91234-5678',
           timestamp: new Date(Date.now() - 30 * 60 * 1000),
           priority: 'high'
         }
@@ -142,9 +142,9 @@ export default function Dashboard() {
 
       <div className="notifications-section">
         <div className="section-header">
-          <h2>📢 Últimas Notificações</h2>
+          <h2>Últimas Notificações</h2>
           <button onClick={carregarDados} className="refresh-btn">
-            🔄 Atualizar
+            Atualizar
           </button>
         </div>
         

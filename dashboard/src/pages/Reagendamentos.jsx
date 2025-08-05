@@ -26,12 +26,8 @@ export default function Reagendamentos() {
           id: 1,
           paciente: 'Ana Costa',
           telefone: '+55 31 91234-5678',
-          especialidade: 'Cardiologia',
           dataAtual: '2024-01-15',
-          horarioAtual: '10:00',
-          novaData: '2024-01-20',
-          novoHorario: '14:00',
-          motivo: 'Compromisso inadiável'
+          horarioAtual: '10:00'
         }
       ]);
     } finally {
@@ -54,9 +50,9 @@ export default function Reagendamentos() {
   return (
     <div className="reagendamentos">
       <div className="page-header">
-        <h1>🔄 Solicitações de Reagendamento</h1>
+        <h1>Solicitações de Reagendamento</h1>
         <button onClick={carregarReagendamentos} className="refresh-btn">
-          🔄 Atualizar
+          Atualizar
         </button>
       </div>
 
@@ -76,30 +72,24 @@ export default function Reagendamentos() {
                   <p>📱 {reagendamento.telefone}</p>
                 </div>
                 
-                <div className="datas-info">
-                  <div className="data-atual">
-                    <h4>Data Atual</h4>
-                    <p>{formatarData(reagendamento.dataAtual)} às {reagendamento.horarioAtual}</p>
-                  </div>
-                  <div className="seta">→</div>
-                  <div className="nova-data">
-                    <h4>Nova Data</h4>
-                    <p>{formatarData(reagendamento.novaData)} às {reagendamento.novoHorario}</p>
-                  </div>
-                </div>
-
-                <div className="motivo-info">
-                  <h4>Motivo:</h4>
-                  <p>{reagendamento.motivo}</p>
+                <div className="agendamento-atual">
+                  <h4>Agendamento Atual</h4>
+                  <p>{formatarData(reagendamento.dataAtual)} às {reagendamento.horarioAtual}</p>
                 </div>
               </div>
 
               <div className="reagendamento-actions">
-                <button className="btn-aprovar">
-                  ✅ Aprovar
+                <button className="btn-contatar">
+                  Contatar Paciente
                 </button>
-                <button className="btn-rejeitar">
-                  ❌ Rejeitar
+                <button className="btn-agendado">
+                  Agendado
+                </button>
+                <button className="btn-espera">
+                  Lista de Espera
+                </button>
+                <button className="btn-nao-quer">
+                  Não Quer
                 </button>
               </div>
             </div>

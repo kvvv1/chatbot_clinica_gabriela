@@ -27,7 +27,7 @@ export default function Secretaria() {
           paciente: 'Roberto Santos',
           telefone: '+55 31 91234-5678',
           dataSolicitacao: '2024-01-15T10:30:00',
-          motivo: 'Dúvidas sobre horários de atendimento'
+          status: 'pendente'
         }
       ]);
     } finally {
@@ -61,9 +61,9 @@ export default function Secretaria() {
   return (
     <div className="secretaria">
       <div className="page-header">
-        <h1>💬 Atendimento Manual</h1>
+        <h1>Atendimento Manual</h1>
         <button onClick={carregarSolicitacoes} className="refresh-btn">
-          🔄 Atualizar
+          Atualizar
         </button>
       </div>
 
@@ -85,19 +85,23 @@ export default function Secretaria() {
                 
                 <div className="solicitacao-info">
                   <p><strong>Data da Solicitação:</strong> {formatarData(solicitacao.dataSolicitacao)}</p>
-                  <p><strong>Motivo:</strong> {solicitacao.motivo}</p>
+                  <p><strong>Status:</strong> 
+                    <span className={`status-badge ${solicitacao.status}`}>
+                      {solicitacao.status}
+                    </span>
+                  </p>
                 </div>
               </div>
 
               <div className="secretaria-actions">
                 <button 
                   onClick={() => iniciarAtendimento(solicitacao.telefone)}
-                  className="btn-atender"
+                  className="btn-iniciar"
                 >
-                  💬 Atender
+                  Iniciar Atendimento
                 </button>
                 <button className="btn-ignorar">
-                  ❌ Ignorar
+                  Ignorar
                 </button>
               </div>
             </div>

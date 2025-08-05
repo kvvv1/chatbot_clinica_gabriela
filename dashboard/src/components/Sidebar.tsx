@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
+import logo from '../assets/logo.png';
 import './Sidebar.css';
 
 export default function Sidebar() {
@@ -11,8 +12,9 @@ export default function Sidebar() {
   return (
     <div className="sidebar">
       <div className="sidebar-header">
-        <h2>🏥 Clínica Gabriela</h2>
-        <p>Secretaria Digital</p>
+        <div className="logo-container">
+          <img src={logo} alt="Clínica Gabriela Nassif" className="logo" />
+        </div>
       </div>
       
       <nav className="sidebar-nav">
@@ -57,12 +59,6 @@ export default function Sidebar() {
             <Link to="/pacientes">
               <span className="icon">🧑‍⚕️</span>
               <span className="text">Pacientes Cadastrados</span>
-            </Link>
-          </li>
-          <li className={isActive('/configuracoes')}>
-            <Link to="/configuracoes">
-              <span className="icon">⚙️</span>
-              <span className="text">Configurações</span>
             </Link>
           </li>
         </ul>

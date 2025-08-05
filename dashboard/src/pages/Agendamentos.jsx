@@ -30,7 +30,6 @@ export default function Agendamentos() {
           id: 1,
           paciente: 'João da Silva',
           telefone: '+55 31 91234-5678',
-          especialidade: 'Cardiologia',
           data: '2024-01-15',
           horario: '10:00',
           status: 'pendente',
@@ -40,7 +39,6 @@ export default function Agendamentos() {
           id: 2,
           paciente: 'Maria Santos',
           telefone: '+55 31 98765-4321',
-          especialidade: 'Dermatologia',
           data: '2024-01-16',
           horario: '14:30',
           status: 'pendente',
@@ -50,7 +48,6 @@ export default function Agendamentos() {
           id: 3,
           paciente: 'Pedro Oliveira',
           telefone: '+55 31 94567-8901',
-          especialidade: 'Ortopedia',
           data: '2024-01-17',
           horario: '09:00',
           status: 'pendente',
@@ -121,9 +118,9 @@ export default function Agendamentos() {
   return (
     <div className="agendamentos">
       <div className="page-header">
-        <h1>📅 Agendamentos Pendentes</h1>
+        <h1>Agendamentos Pendentes</h1>
         <button onClick={carregarAgendamentos} className="refresh-btn">
-          🔄 Atualizar
+          Atualizar
         </button>
       </div>
 
@@ -144,7 +141,6 @@ export default function Agendamentos() {
                 </div>
                 
                 <div className="consulta-info">
-                  <p><strong>Especialidade:</strong> {agendamento.especialidade}</p>
                   <p><strong>Data:</strong> {formatarData(agendamento.data)}</p>
                   <p><strong>Horário:</strong> {agendamento.horario}</p>
                   {agendamento.observacoes && (

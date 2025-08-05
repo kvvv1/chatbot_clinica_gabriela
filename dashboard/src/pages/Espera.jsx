@@ -26,7 +26,6 @@ export default function Espera() {
           id: 1,
           paciente: 'Fernanda Lima',
           telefone: '+55 31 91234-5678',
-          especialidade: 'Cardiologia',
           dataSolicitacao: '2024-01-10',
           prioridade: 'alta'
         }
@@ -51,9 +50,9 @@ export default function Espera() {
   return (
     <div className="espera">
       <div className="page-header">
-        <h1>📋 Lista de Espera</h1>
+        <h1>Lista de Espera</h1>
         <button onClick={carregarListaEspera} className="refresh-btn">
-          🔄 Atualizar
+          Atualizar
         </button>
       </div>
 
@@ -73,8 +72,7 @@ export default function Espera() {
                   <p>📱 {item.telefone}</p>
                 </div>
                 
-                <div className="especialidade-info">
-                  <p><strong>Especialidade:</strong> {item.especialidade}</p>
+                <div className="solicitacao-info">
                   <p><strong>Data da Solicitação:</strong> {formatarData(item.dataSolicitacao)}</p>
                   <p><strong>Prioridade:</strong> 
                     <span className={`prioridade-badge ${item.prioridade}`}>
@@ -86,10 +84,10 @@ export default function Espera() {
 
               <div className="espera-actions">
                 <button className="btn-contatar">
-                  📞 Contatar
+                  Contatar
                 </button>
-                <button className="btn-agendar">
-                  📅 Agendar
+                <button className="btn-agendado">
+                  Agendado
                 </button>
               </div>
             </div>

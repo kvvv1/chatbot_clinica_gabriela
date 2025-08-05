@@ -26,10 +26,8 @@ export default function Cancelamentos() {
           id: 1,
           paciente: 'Carlos Silva',
           telefone: '+55 31 91234-5678',
-          especialidade: 'Dermatologia',
           data: '2024-01-18',
-          horario: '15:00',
-          motivo: 'Viagem de última hora'
+          horario: '15:00'
         }
       ]);
     } finally {
@@ -52,9 +50,9 @@ export default function Cancelamentos() {
   return (
     <div className="cancelamentos">
       <div className="page-header">
-        <h1>❌ Solicitações de Cancelamento</h1>
+        <h1>Solicitações de Cancelamento</h1>
         <button onClick={carregarCancelamentos} className="refresh-btn">
-          🔄 Atualizar
+          Atualizar
         </button>
       </div>
 
@@ -74,20 +72,15 @@ export default function Cancelamentos() {
                   <p>📱 {cancelamento.telefone}</p>
                 </div>
                 
-                <div className="consulta-info">
-                  <p><strong>Especialidade:</strong> {cancelamento.especialidade}</p>
-                  <p><strong>Data:</strong> {formatarData(cancelamento.data)}</p>
-                  <p><strong>Horário:</strong> {cancelamento.horario}</p>
-                  <p><strong>Motivo:</strong> {cancelamento.motivo}</p>
+                <div className="agendamento-atual">
+                  <h4>Agendamento Atual</h4>
+                  <p>{formatarData(cancelamento.data)} às {cancelamento.horario}</p>
                 </div>
               </div>
 
               <div className="cancelamento-actions">
-                <button className="btn-aprovar">
-                  ✅ Aprovar
-                </button>
-                <button className="btn-rejeitar">
-                  ❌ Rejeitar
+                <button className="btn-contatar">
+                  Contatar Paciente
                 </button>
               </div>
             </div>

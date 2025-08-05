@@ -1,8 +1,9 @@
 .cancelamentos {
-  padding: 2rem;
-  margin-left: 280px;
+  padding: 0;
+  margin-left: 0;
   min-height: 100vh;
-  background: #f8f9fa;
+  background: #f8fafc;
+  width: 100%;
 }
 
 .page-header {
@@ -10,39 +11,58 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
+  width: 100%;
 }
 
 .page-header h1 {
   margin: 0;
-  font-size: 2rem;
-  color: #333;
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.75rem;
+  color: #1e293b;
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
+/* Removido emoji duplicado */
+
 .refresh-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #002366 0%, #305090 100%);
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
-  border-radius: 25px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
   font-weight: 500;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0, 35, 102, 0.2);
 }
 
 .refresh-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 8px rgba(0, 35, 102, 0.3);
 }
 
+/* Removido emoji duplicado */
+
 .error-message {
-  background: #f8d7da;
-  color: #721c24;
-  padding: 1rem;
+  background: #fef2f2;
+  color: #dc2626;
+  padding: 1rem 1.5rem;
   border-radius: 8px;
   margin-bottom: 2rem;
-  border: 1px solid #f5c6cb;
+  border: 1px solid #fecaca;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .cancelamentos-list {
@@ -52,19 +72,22 @@
 }
 
 .cancelamento-card {
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 1.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
+  position: relative;
 }
 
 .cancelamento-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: #cbd5e1;
 }
 
 .cancelamento-info {
@@ -76,25 +99,43 @@
 
 .paciente-info h3 {
   margin: 0 0 0.5rem 0;
-  font-size: 1.2rem;
-  color: #333;
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.125rem;
+  color: #1e293b;
   font-weight: 600;
 }
 
 .paciente-info p {
   margin: 0;
-  color: #666;
-  font-size: 0.9rem;
+  color: #64748b;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
 }
 
-.consulta-info p {
-  margin: 0 0 0.25rem 0;
-  color: #666;
-  font-size: 0.9rem;
+.agendamento-atual {
+  background: #f8fafc;
+  padding: 1.25rem;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
 }
 
-.consulta-info strong {
-  color: #333;
+.agendamento-atual h4 {
+  margin: 0 0 0.5rem 0;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  color: #64748b;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.agendamento-atual p {
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  font-size: 1rem;
+  color: #1e293b;
+  font-weight: 600;
 }
 
 .cancelamento-actions {
@@ -102,54 +143,62 @@
   gap: 1rem;
 }
 
-.btn-aprovar, .btn-rejeitar {
+.btn-contatar {
   padding: 0.75rem 1.5rem;
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
   font-weight: 500;
-  transition: all 0.3s ease;
-}
-
-.btn-aprovar {
-  background: #28a745;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #3b82f6;
   color: white;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
 }
 
-.btn-aprovar:hover {
-  background: #218838;
+.btn-contatar:hover {
+  background: #2563eb;
   transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
 }
 
-.btn-rejeitar {
-  background: #dc3545;
-  color: white;
-}
-
-.btn-rejeitar:hover {
-  background: #c82333;
-  transform: translateY(-1px);
+.btn-contatar::before {
+  content: '💬';
+  font-size: 1rem;
 }
 
 .no-cancelamentos {
   text-align: center;
   padding: 3rem;
-  background: white;
-  border-radius: 12px;
-  color: #666;
+  background: #ffffff;
+  border-radius: 16px;
+  color: #64748b;
+  font-family: 'Poppins', sans-serif;
+  border: 1px solid #e2e8f0;
 }
 
 .no-cancelamentos p {
-  font-size: 1.1rem;
+  font-size: 1rem;
   margin: 0;
+  font-weight: 500;
 }
 
 /* Responsividade */
+@media (max-width: 1024px) {
+  .cancelamentos {
+    margin-left: 0;
+    padding: 0;
+  }
+}
+
 @media (max-width: 768px) {
   .cancelamentos {
     margin-left: 0;
-    padding: 1rem;
+    padding: 0;
   }
   
   .page-header {
@@ -162,10 +211,16 @@
     font-size: 1.5rem;
   }
   
+  .refresh-btn {
+    padding: 0.625rem 1.25rem;
+    font-size: 0.8rem;
+  }
+  
   .cancelamento-card {
     flex-direction: column;
     gap: 1rem;
     align-items: flex-start;
+    padding: 1.25rem;
   }
   
   .cancelamento-info {
@@ -181,5 +236,51 @@
   
   .btn-aprovar, .btn-rejeitar {
     flex: 1;
+    padding: 0.75rem 1rem;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .cancelamentos {
+    padding: 0;
+  }
+  
+  .page-header h1 {
+    font-size: 1.25rem;
+  }
+  
+  .refresh-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.75rem;
+  }
+  
+  .cancelamento-card {
+    padding: 1rem;
+  }
+  
+  .paciente-info h3 {
+    font-size: 1rem;
+  }
+  
+  .paciente-info p {
+    font-size: 0.8rem;
+  }
+  
+  .consulta-info p {
+    font-size: 0.8rem;
+  }
+  
+  .btn-aprovar, .btn-rejeitar {
+    padding: 0.625rem 0.75rem;
+    font-size: 0.75rem;
+  }
+  
+  .no-cancelamentos {
+    padding: 2rem 1rem;
+  }
+  
+  .no-cancelamentos p {
+    font-size: 0.9rem;
   }
 } 

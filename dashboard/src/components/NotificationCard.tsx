@@ -30,7 +30,10 @@ export default function NotificationCard({ notification }) {
   };
 
   return (
-    <div className={`notification-card ${notification.type}`}>
+    <div 
+      className={`notification-card ${notification.type}`}
+      data-priority={notification.priority || 'normal'}
+    >
       <div className="notification-icon">
         {getIcon(notification.type)}
       </div>
