@@ -14,6 +14,8 @@
   width: 100%;
   box-sizing: border-box;
   overflow: hidden;
+  min-height: 80px; /* Altura mínima para consistência */
+  max-height: 100px; /* Altura máxima reduzida para evitar espaços em branco */
 }
 
 .notification-card:hover {
@@ -23,15 +25,15 @@
 }
 
 .notification-card.agendamento {
-  border-left-color: #10b981;
+  border-left-color: #3b82f6;
 }
 
 .notification-card.reagendamento {
-  border-left-color: #f59e0b;
+  border-left-color: #3b82f6;
 }
 
 .notification-card.cancelamento {
-  border-left-color: #ef4444;
+  border-left-color: #3b82f6;
 }
 
 .notification-card.paciente {
@@ -39,7 +41,7 @@
 }
 
 .notification-card.secretaria {
-  border-left-color: #8b5cf6;
+  border-left-color: #3b82f6;
 }
 
 .notification-icon {
@@ -59,6 +61,7 @@
   flex: 1;
   min-width: 0;
   overflow: hidden;
+  max-height: 100px; /* Altura máxima para o conteúdo */
 }
 
 .notification-content h4 {
@@ -81,6 +84,12 @@
   word-wrap: break-word;
   overflow-wrap: break-word;
   font-weight: 400;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* Limita a 2 linhas */
+  -webkit-box-orient: vertical;
+  max-height: 2.25rem; /* 1.5 * 0.75rem * 2 linhas */
 }
 
 .notification-time {
@@ -129,6 +138,8 @@
 @media (max-width: 768px) {
   .notification-card {
     padding: 1rem;
+    min-height: 70px; /* Altura mínima para mobile */
+    max-height: 90px; /* Altura máxima reduzida para mobile */
   }
   
   .notification-icon {
@@ -137,12 +148,17 @@
     font-size: 0.75rem;
   }
   
+  .notification-content {
+    max-height: 90px; /* Altura máxima reduzida para mobile */
+  }
+  
   .notification-content h4 {
     font-size: 0.8rem;
   }
   
   .notification-content p {
     font-size: 0.75rem;
+    max-height: 2.25rem; /* Mantém 2 linhas */
   }
   
   .notification-time {
@@ -160,6 +176,8 @@
 @media (max-width: 480px) {
   .notification-card {
     padding: 0.875rem;
+    min-height: 65px; /* Altura mínima para telas pequenas */
+    max-height: 85px; /* Altura máxima ainda menor para telas pequenas */
   }
   
   .notification-icon {
@@ -168,12 +186,17 @@
     font-size: 0.7rem;
   }
   
+  .notification-content {
+    max-height: 80px; /* Altura máxima reduzida para telas pequenas */
+  }
+  
   .notification-content h4 {
     font-size: 0.75rem;
   }
   
   .notification-content p {
     font-size: 0.7rem;
+    max-height: 2.1rem; /* Ajustado para fonte menor */
   }
   
   .notification-time {

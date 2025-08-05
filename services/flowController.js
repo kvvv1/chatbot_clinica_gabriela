@@ -518,10 +518,10 @@ function handleMenuPrincipal(phone, message) {
       const isBusinessHours = verificarHorarioAtendimento();
       
       if (isBusinessHours) {
-        setUserState(userPhone, "aguardando_atendimento_secretaria");
+        setUserState(phone, "aguardando_atendimento_secretaria");
         return "👩‍💼 Seu atendimento foi direcionado para a secretária. Por favor, aguarde.";
       } else {
-        setUserState(userPhone, "finalizado");
+        setUserState(phone, "finalizado");
         return (
           "🕐 *A clínica está fora do horário de atendimento.*\n\n" +
           "📅 *Horário de Atendimento:*\n" +

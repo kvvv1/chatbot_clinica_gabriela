@@ -1,13 +1,21 @@
 .header {
   position: fixed;
   top: 0;
-  left: 280px; /* Largura da sidebar */
+  left: 0;
   right: 0;
   height: 80px;
   background: #ffffff;
   border-bottom: 1px solid #e2e8f0;
   z-index: 999;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  margin-left: 280px; /* Largura da sidebar */
+  transition: margin-left 0.3s ease;
+}
+
+/* Quando o sidebar estiver colapsado */
+.sidebar.collapsed ~ .main-content .header,
+.sidebar.collapsed + .main-content .header {
+  margin-left: 80px;
 }
 
 .header-content {

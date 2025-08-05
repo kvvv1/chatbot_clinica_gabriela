@@ -10,22 +10,21 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   width: 100%;
+  padding: 0 0.75rem;
 }
 
 .page-header h1 {
   margin: 0;
   font-family: 'Poppins', sans-serif;
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   color: #1e293b;
   font-weight: 600;
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
-
-/* Removido emoji duplicado */
 
 .refresh-btn {
   background: linear-gradient(135deg, #002366 0%, #305090 100%);
@@ -35,9 +34,9 @@
   border-radius: 8px;
   cursor: pointer;
   font-family: 'Poppins', sans-serif;
-  font-size: 0.875rem;
+  font-size: 0.85rem;
   font-weight: 500;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -49,81 +48,88 @@
   box-shadow: 0 4px 8px rgba(0, 35, 102, 0.3);
 }
 
-/* Removido emoji duplicado */
-
 .error-message {
   background: #fef2f2;
   color: #dc2626;
   padding: 1rem 1.5rem;
-  border-radius: 8px;
-  margin-bottom: 2rem;
+  border-radius: 10px;
+  margin: 0 0.75rem 1.5rem 0.75rem;
   border: 1px solid #fecaca;
   font-family: 'Poppins', sans-serif;
   font-weight: 500;
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.1);
 }
 
 .agendamentos-list {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1rem;
+  padding: 0 0.75rem;
 }
 
 .agendamento-card {
   background: #ffffff;
-  border-radius: 16px;
-  padding: 1.75rem;
+  border-radius: 12px;
+  padding: 1.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   border: 1px solid #e2e8f0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  transition: all 0.2s ease;
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1fr;
+  gap: 2rem;
+  align-items: start;
+  transition: all 0.3s ease;
   position: relative;
 }
 
 .agendamento-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   border-color: #cbd5e1;
 }
 
 .agendamento-info {
-  flex: 1;
+  display: contents;
+}
+
+/* Coluna 1: Nome, Telefone, Status */
+.paciente-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+  align-items: flex-start;
+}
+
+.paciente-name {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.25rem;
+  color: #1e293b;
+  font-weight: 700;
   display: flex;
   align-items: center;
-  gap: 2rem;
+  gap: 0.5rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+  width: 100%;
 }
 
-.paciente-info h3 {
-  margin: 0 0 0.5rem 0;
+.paciente-phone {
   font-family: 'Poppins', sans-serif;
-  font-size: 1.125rem;
-  color: #1e293b;
-  font-weight: 600;
-}
-
-.paciente-info p {
-  margin: 0;
+  font-size: 0.95rem;
   color: #64748b;
-  font-family: 'Poppins', sans-serif;
-  font-size: 0.875rem;
   font-weight: 500;
-}
-
-.consulta-info p {
-  margin: 0 0 0.25rem 0;
-  color: #64748b;
-  font-family: 'Poppins', sans-serif;
-  font-size: 0.875rem;
-  font-weight: 400;
-}
-
-.consulta-info strong {
-  color: #1e293b;
-  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
 }
 
 .status-badge {
@@ -135,6 +141,69 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  white-space: nowrap;
+  align-self: flex-start;
+  margin-top: 0.25rem;
+}
+
+/* Coluna 2: Data, Horário, Consulta */
+.consulta-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.consulta-info p {
+  margin: 0;
+  color: #64748b;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+  width: 100%;
+}
+
+.consulta-info strong {
+  color: #1e293b;
+  font-weight: 600;
+  min-width: 60px;
+  flex-shrink: 0;
+}
+
+/* Coluna 3: Botões de Ação */
+.agendamento-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: flex-end;
+  justify-content: center;
+  min-width: 0;
+}
+
+.btn-aprovar, .btn-rejeitar {
+  padding: 0.625rem 1.25rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 100px;
+  justify-content: center;
+  white-space: nowrap;
+  width: 100%;
 }
 
 .status-badge[style*="orange"] {
@@ -153,73 +222,59 @@
   background-color: #6b7280;
 }
 
-.agendamento-actions {
-  display: flex;
-  gap: 1rem;
-}
-
-.btn-aprovar, .btn-rejeitar {
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-family: 'Poppins', sans-serif;
-  font-size: 0.875rem;
-  font-weight: 500;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
 .btn-aprovar {
-  background: #10b981;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
-  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+  box-shadow: 0 3px 6px rgba(16, 185, 129, 0.3);
 }
 
 .btn-aprovar:hover {
-  background: #059669;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(16, 185, 129, 0.4);
 }
 
 .btn-aprovar::before {
   content: '✅';
-  font-size: 1rem;
+  font-size: 1.1rem;
 }
 
 .btn-rejeitar {
-  background: #ef4444;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   color: white;
-  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
+  box-shadow: 0 3px 6px rgba(239, 68, 68, 0.3);
 }
 
 .btn-rejeitar:hover {
-  background: #dc2626;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(239, 68, 68, 0.4);
 }
 
 .btn-rejeitar::before {
   content: '❌';
-  font-size: 1rem;
+  font-size: 1.1rem;
 }
 
 .no-agendamentos {
   text-align: center;
-  padding: 3rem;
+  padding: 4rem 2rem;
   background: #ffffff;
-  border-radius: 16px;
+  border-radius: 18px;
   color: #64748b;
   font-family: 'Poppins', sans-serif;
   border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .no-agendamentos p {
-  font-size: 1rem;
+  font-size: 1.1rem;
   margin: 0;
   font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
 }
 
 /* Modal */
@@ -229,156 +284,561 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 9999999 !important;
   padding: 1rem;
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  isolation: isolate;
+  pointer-events: auto;
 }
 
 .modal {
   background: #ffffff;
-  border-radius: 16px;
-  padding: 2rem;
+  border-radius: 20px;
+  padding: 2.5rem;
   width: 100%;
-  max-width: 500px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  max-width: 550px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
   border: 1px solid #e2e8f0;
+  animation: modalSlideIn 0.3s ease-out;
+  z-index: 10000000 !important;
+  position: relative;
+  isolation: isolate;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .modal-header h3 {
   margin: 0;
   font-family: 'Poppins', sans-serif;
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   color: #1e293b;
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .close-btn {
   background: none;
   border: none;
-  font-size: 1.5rem;
+  font-size: 1.75rem;
   cursor: pointer;
   color: #64748b;
-  padding: 0;
-  width: 30px;
-  height: 30px;
+  padding: 0.5rem;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
+  border-radius: 8px;
   transition: all 0.2s ease;
 }
 
 .close-btn:hover {
   color: #1e293b;
   background-color: #f1f5f9;
+  transform: scale(1.1);
 }
 
 .modal-body p {
-  margin: 0 0 0.75rem 0;
+  margin: 0 0 1rem 0;
   color: #64748b;
   font-family: 'Poppins', sans-serif;
-  font-size: 0.875rem;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .modal-body strong {
   color: #1e293b;
   font-weight: 600;
+  min-width: 80px;
 }
 
 .motivo-rejeicao {
-  margin-top: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e2e8f0;
 }
 
 .motivo-rejeicao label {
   display: block;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
   color: #1e293b;
   font-family: 'Poppins', sans-serif;
   font-weight: 600;
-  font-size: 0.875rem;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .motivo-rejeicao textarea {
   width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
+  padding: 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
   font-family: 'Poppins', sans-serif;
-  font-size: 0.875rem;
+  font-size: 1rem;
   resize: vertical;
   background-color: #f8fafc;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
+  min-height: 100px;
 }
 
 .motivo-rejeicao textarea:focus {
   outline: none;
   border-color: #002366;
   background-color: #ffffff;
-  box-shadow: 0 0 0 3px rgba(0, 35, 102, 0.1);
+  box-shadow: 0 0 0 4px rgba(0, 35, 102, 0.1);
 }
 
 .modal-actions {
   display: flex;
-  gap: 1rem;
+  gap: 1.25rem;
   justify-content: flex-end;
-  margin-top: 2rem;
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e2e8f0;
 }
 
 .btn-cancelar, .btn-confirmar-aprovar, .btn-confirmar-rejeitar {
-  padding: 0.75rem 1.5rem;
+  padding: 0.875rem 2rem;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   cursor: pointer;
   font-family: 'Poppins', sans-serif;
-  font-size: 0.875rem;
-  font-weight: 500;
-  transition: all 0.2s ease;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  min-width: 120px;
 }
 
 .btn-cancelar {
-  background: #6b7280;
+  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
   color: white;
-  box-shadow: 0 2px 4px rgba(107, 114, 128, 0.2);
+  box-shadow: 0 3px 6px rgba(107, 114, 128, 0.3);
 }
 
 .btn-cancelar:hover {
-  background: #4b5563;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(107, 114, 128, 0.3);
+  background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(107, 114, 128, 0.4);
 }
 
 .btn-confirmar-aprovar {
-  background: #10b981;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
-  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+  box-shadow: 0 3px 6px rgba(16, 185, 129, 0.3);
 }
 
 .btn-confirmar-aprovar:hover {
-  background: #059669;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(16, 185, 129, 0.4);
 }
 
 .btn-confirmar-rejeitar {
-  background: #ef4444;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   color: white;
-  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
+  box-shadow: 0 3px 6px rgba(239, 68, 68, 0.3);
 }
 
 .btn-confirmar-rejeitar:hover {
-  background: #dc2626;
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(239, 68, 68, 0.4);
+}
+
+/* Loading state */
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.1rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* ===== CARD DE CANCELAMENTO OTIMIZADO ===== */
+
+.cancelamento-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 2px solid #fecaca;
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1fr;
+  gap: 2rem;
+  align-items: start;
+  transition: all 0.3s ease;
+  position: relative;
+  background: linear-gradient(135deg, #ffffff 0%, #fef2f2 100%);
+}
+
+.cancelamento-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
+  border-color: #fca5a5;
+}
+
+/* Coluna 1: Informações do Paciente */
+.paciente-info-cancelamento {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+  align-items: flex-start;
+}
+
+.paciente-name-cancelamento {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.25rem;
+  color: #1e293b;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+  width: 100%;
+  text-align: left;
+}
+
+.paciente-name-cancelamento::before {
+  content: '👤';
+  font-size: 1.1rem;
+}
+
+.paciente-phone-cancelamento {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.95rem;
+  color: #64748b;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+.paciente-phone-cancelamento::before {
+  content: '📞';
+  font-size: 1rem;
+}
+
+/* Coluna 2: Dados do Agendamento */
+.agendamento-info-cancelamento {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.agendamento-info-cancelamento p {
+  margin: 0;
+  color: #64748b;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+  width: 100%;
+}
+
+.agendamento-info-cancelamento strong {
+  color: #1e293b;
+  font-weight: 600;
+  min-width: 60px;
+  flex-shrink: 0;
+}
+
+.agendamento-info-cancelamento p:nth-child(1)::before {
+  content: '📅';
+  font-size: 1rem;
+}
+
+.agendamento-info-cancelamento p:nth-child(2)::before {
+  content: '🕐';
+  font-size: 1rem;
+}
+
+.agendamento-info-cancelamento p:nth-child(3)::before {
+  content: '🏥';
+  font-size: 1rem;
+}
+
+.status-cancelamento-badge {
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  color: white;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
+  white-space: nowrap;
+  align-self: flex-start;
+  margin-top: 0.25rem;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.status-cancelamento-badge::before {
+  content: '❌';
+  font-size: 0.9rem;
+}
+
+/* Coluna 3: Ações em Grid 2x2 */
+.cancelamento-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  align-items: start;
+  justify-content: center;
+  min-width: 0;
+}
+
+.btn-contatar {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border: none;
+  padding: 0.625rem 0.75rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+  text-align: center;
+  line-height: 1.2;
+}
+
+.btn-contatar:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.4);
+}
+
+.btn-contatar::before {
+  content: '📞';
+  font-size: 0.9rem;
+}
+
+.btn-confirmar-cancelamento {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  padding: 0.625rem 0.75rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+  text-align: center;
+  line-height: 1.2;
+}
+
+.btn-confirmar-cancelamento:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.4);
+}
+
+.btn-confirmar-cancelamento::before {
+  content: '✅';
+  font-size: 0.9rem;
+}
+
+.btn-ver-detalhes {
+  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+  color: white;
+  border: none;
+  padding: 0.625rem 0.75rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(107, 114, 128, 0.3);
+  text-align: center;
+  line-height: 1.2;
+}
+
+.btn-ver-detalhes:hover {
+  background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(107, 114, 128, 0.4);
+}
+
+.btn-ver-detalhes::before {
+  content: '👁️';
+  font-size: 0.9rem;
+}
+
+.btn-reverter {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+  border: none;
+  padding: 0.625rem 0.75rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+  text-align: center;
+  line-height: 1.2;
+}
+
+.btn-reverter:hover {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(245, 158, 11, 0.4);
+}
+
+.btn-reverter::before {
+  content: '↩️';
+  font-size: 0.9rem;
+}
+
+/* Responsividade para o card de cancelamento */
+@media (max-width: 768px) {
+  .cancelamento-card {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    padding: 1.25rem;
+  }
+  
+  .paciente-info-cancelamento {
+    gap: 1rem;
+  }
+  
+  .paciente-name-cancelamento {
+    font-size: 1.1rem;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+  
+  .paciente-phone-cancelamento {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+  
+  .agendamento-info-cancelamento {
+    gap: 0.75rem;
+  }
+  
+  .agendamento-info-cancelamento p {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+  
+  .cancelamento-actions {
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  
+  .btn-contatar, .btn-confirmar-cancelamento, .btn-ver-detalhes, .btn-reverter {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .cancelamento-card {
+    padding: 1rem;
+    gap: 1.25rem;
+  }
+  
+  .paciente-name-cancelamento {
+    font-size: 1rem;
+  }
+  
+  .paciente-phone-cancelamento {
+    font-size: 0.9rem;
+  }
+  
+  .agendamento-info-cancelamento p {
+    font-size: 0.9rem;
+  }
+  
+  .cancelamento-actions {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  
+  .btn-contatar, .btn-confirmar-cancelamento, .btn-ver-detalhes, .btn-reverter {
+    padding: 0.625rem 0.75rem;
+    font-size: 0.75rem;
+  }
 }
 
 /* Responsividade */
@@ -386,6 +846,10 @@
   .agendamentos {
     margin-left: 0;
     padding: 0;
+  }
+  
+  .agendamento-info {
+    gap: 2rem;
   }
 }
 
@@ -397,8 +861,9 @@
   
   .page-header {
     flex-direction: column;
-    gap: 1rem;
+    gap: 1.25rem;
     align-items: flex-start;
+    padding: 0 1rem;
   }
   
   .page-header h1 {
@@ -406,52 +871,84 @@
   }
   
   .refresh-btn {
-    padding: 0.625rem 1.25rem;
-    font-size: 0.8rem;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.9rem;
   }
   
   .agendamento-card {
-    flex-direction: column;
-    gap: 1rem;
-    align-items: flex-start;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
     padding: 1.25rem;
   }
   
   .agendamento-info {
+    display: flex;
     flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  .paciente-info {
     gap: 1rem;
-    width: 100%;
+  }
+  
+  .paciente-name {
+    font-size: 1.1rem;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+  
+  .paciente-phone {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+  
+  .status-badge {
+    align-self: flex-start;
+    margin-top: 0.5rem;
+  }
+  
+  .consulta-info {
+    gap: 0.75rem;
+  }
+  
+  .consulta-info p {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
   }
   
   .agendamento-actions {
-    width: 100%;
-    justify-content: stretch;
+    align-items: stretch;
+    gap: 1rem;
+    justify-content: flex-start;
   }
   
   .btn-aprovar, .btn-rejeitar {
-    flex: 1;
+    width: 100%;
     padding: 0.75rem 1rem;
-    font-size: 0.8rem;
+    font-size: 0.875rem;
   }
   
   .modal {
     margin: 1rem;
-    padding: 1.5rem;
+    padding: 2rem;
     max-width: calc(100vw - 2rem);
   }
   
   .modal-header h3 {
-    font-size: 1.125rem;
+    font-size: 1.25rem;
   }
   
   .modal-actions {
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 1rem;
   }
   
   .btn-cancelar, .btn-confirmar-aprovar, .btn-confirmar-rejeitar {
     width: 100%;
-    padding: 0.75rem 1rem;
+    padding: 0.875rem 1rem;
   }
 }
 
@@ -465,54 +962,55 @@
   }
   
   .refresh-btn {
-    padding: 0.5rem 1rem;
-    font-size: 0.75rem;
+    padding: 0.75rem 1.25rem;
+    font-size: 0.85rem;
   }
   
   .agendamento-card {
     padding: 1rem;
+    gap: 1.25rem;
   }
   
-  .paciente-info h3 {
+  .paciente-name {
     font-size: 1rem;
   }
   
-  .paciente-info p {
-    font-size: 0.8rem;
+  .paciente-phone {
+    font-size: 0.9rem;
   }
   
   .consulta-info p {
-    font-size: 0.8rem;
+    font-size: 0.9rem;
   }
   
   .btn-aprovar, .btn-rejeitar {
     padding: 0.625rem 0.75rem;
-    font-size: 0.75rem;
+    font-size: 0.8rem;
   }
   
   .modal {
     margin: 0.5rem;
-    padding: 1rem;
+    padding: 1.5rem;
   }
   
   .modal-header h3 {
-    font-size: 1rem;
+    font-size: 1.1rem;
   }
   
   .modal-body p {
-    font-size: 0.8rem;
+    font-size: 0.9rem;
   }
   
   .motivo-rejeicao textarea {
-    padding: 0.625rem;
-    font-size: 0.8rem;
+    padding: 0.875rem;
+    font-size: 0.9rem;
   }
   
   .no-agendamentos {
-    padding: 2rem 1rem;
+    padding: 3rem 1.5rem;
   }
   
   .no-agendamentos p {
-    font-size: 0.9rem;
+    font-size: 1rem;
   }
 } 

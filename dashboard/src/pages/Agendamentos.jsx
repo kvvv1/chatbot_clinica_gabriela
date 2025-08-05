@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { dashboardService } from '../services/api';
 import './Agendamentos.css';
 
@@ -118,9 +119,9 @@ export default function Agendamentos() {
   return (
     <div className="agendamentos">
       <div className="page-header">
-        <h1>Agendamentos Pendentes</h1>
+        <h1>📋 Agendamentos Pendentes</h1>
         <button onClick={carregarAgendamentos} className="refresh-btn">
-          Atualizar
+          🔄 Atualizar
         </button>
       </div>
 
@@ -135,49 +136,55 @@ export default function Agendamentos() {
           agendamentos.map((agendamento) => (
             <div key={agendamento.id} className="agendamento-card">
               <div className="agendamento-info">
+                {/* Coluna 1: Nome, Telefone, Status */}
                 <div className="paciente-info">
-                  <h3>{agendamento.paciente}</h3>
-                  <p>📱 {agendamento.telefone}</p>
+                  <div className="paciente-name">
+                    👤 {agendamento.paciente}
+                  </div>
+                  <div className="paciente-phone">
+                    📱 {agendamento.telefone}
+                  </div>
+                  <div className="status-badge" style={{ backgroundColor: getStatusColor(agendamento.status) }}>
+                    {agendamento.status}
+                  </div>
                 </div>
                 
+                {/* Coluna 2: Data, Horário, Consulta */}
                 <div className="consulta-info">
-                  <p><strong>Data:</strong> {formatarData(agendamento.data)}</p>
-                  <p><strong>Horário:</strong> {agendamento.horario}</p>
+                  <p><strong>📅 Data:</strong> {formatarData(agendamento.data)}</p>
+                  <p><strong>🕐 Horário:</strong> {agendamento.horario}</p>
                   {agendamento.observacoes && (
-                    <p><strong>Observações:</strong> {agendamento.observacoes}</p>
+                    <p><strong>📝 Consulta:</strong> {agendamento.observacoes}</p>
                   )}
                 </div>
-
-                <div className="status-badge" style={{ backgroundColor: getStatusColor(agendamento.status) }}>
-                  {agendamento.status}
+                
+                {/* Coluna 3: Botões de Ação */}
+                <div className="agendamento-actions">
+                  <button 
+                    onClick={() => openModal(agendamento, 'aprovar')}
+                    className="btn-aprovar"
+                  >
+                    Aprovar
+                  </button>
+                  <button 
+                    onClick={() => openModal(agendamento, 'rejeitar')}
+                    className="btn-rejeitar"
+                  >
+                    Rejeitar
+                  </button>
                 </div>
-              </div>
-
-              <div className="agendamento-actions">
-                <button 
-                  onClick={() => openModal(agendamento, 'aprovar')}
-                  className="btn-aprovar"
-                >
-                  ✅ Aprovar
-                </button>
-                <button 
-                  onClick={() => openModal(agendamento, 'rejeitar')}
-                  className="btn-rejeitar"
-                >
-                  ❌ Rejeitar
-                </button>
               </div>
             </div>
           ))
         ) : (
           <div className="no-agendamentos">
-            <p>Nenhum agendamento pendente no momento</p>
+            <p>📭 Nenhum agendamento pendente no momento</p>
           </div>
         )}
       </div>
 
       {/* Modal */}
-      {showModal && selectedAgendamento && (
+      {showModal && selectedAgendamento && createPortal(
         <div className="modal-overlay">
           <div className="modal">
             <div className="modal-header">
@@ -189,15 +196,15 @@ export default function Agendamentos() {
             
             <div className="modal-body">
               <p>
-                <strong>Paciente:</strong> {selectedAgendamento.paciente}
+                <strong>👤 Paciente:</strong> {selectedAgendamento.paciente}
               </p>
               <p>
-                <strong>Data:</strong> {formatarData(selectedAgendamento.data)} às {selectedAgendamento.horario}
+                <strong>📅 Data:</strong> {formatarData(selectedAgendamento.data)} às {selectedAgendamento.horario}
               </p>
               
               {modalType === 'rejeitar' && (
                 <div className="motivo-rejeicao">
-                  <label htmlFor="motivo">Motivo da rejeição:</label>
+                  <label htmlFor="motivo">📝 Motivo da rejeição:</label>
                   <textarea
                     id="motivo"
                     value={motivoRejeicao}
@@ -234,7 +241,8 @@ export default function Agendamentos() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

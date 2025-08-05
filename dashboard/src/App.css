@@ -40,6 +40,12 @@ body {
   position: relative;
   min-width: 0;
   background-color: #ffffff;
+  transition: margin-left 0.3s ease;
+}
+
+/* Quando o sidebar estiver colapsado */
+.sidebar.collapsed ~ .main-content {
+  margin-left: 80px;
 }
 
 .content {
@@ -110,6 +116,10 @@ body {
     margin-left: 0;
   }
   
+  .sidebar.collapsed ~ .main-content {
+    margin-left: 0;
+  }
+  
   .content {
     padding-top: calc(70px + 2rem);
     padding-left: 1.5rem;
@@ -119,6 +129,10 @@ body {
 
 @media (max-width: 768px) {
   .main-content {
+    margin-left: 0;
+  }
+  
+  .sidebar.collapsed ~ .main-content {
     margin-left: 0;
   }
   
@@ -133,4 +147,34 @@ body {
     padding: 0.75rem;
     padding-top: calc(70px + 0.75rem);
   }
+}
+
+/* SOLUÇÃO GLOBAL PARA Z-INDEX DOS MODAIS */
+/* Garante que todos os modais fiquem acima do header (z-index: 999) e sidebar (z-index: 1000) */
+
+/* Todos os overlays de modal */
+.modal-overlay,
+.modal-overlay-reagendamento,
+[class*="modal-overlay"],
+[class*="overlay"] {
+  z-index: 9999999 !important;
+  position: fixed !important;
+}
+
+/* Todos os modais */
+.modal,
+.modal-reagendamento,
+[class*="modal"]:not([class*="modal-overlay"]) {
+  z-index: 10000000 !important;
+  position: relative !important;
+}
+
+/* Garantia adicional para qualquer elemento com modal no nome */
+[class*="modal"] {
+  z-index: 9999999 !important;
+}
+
+/* Garantia para elementos com overlay no nome */
+[class*="overlay"] {
+  z-index: 9999999 !important;
 }

@@ -88,15 +88,7 @@ export default function Pacientes() {
                   <h3>{paciente.nome}</h3>
                   <p>📱 {paciente.telefone}</p>
                   <p>📧 {paciente.email}</p>
-                </div>
-                
-                <div className="cadastro-info">
                   <p><strong>Data de Cadastro:</strong> {formatarData(paciente.dataCadastro)}</p>
-                  <p><strong>Origem:</strong> 
-                    <span className="origem-badge">
-                      {paciente.origem}
-                    </span>
-                  </p>
                 </div>
               </div>
 

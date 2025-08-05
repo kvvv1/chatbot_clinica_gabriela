@@ -3,8 +3,26 @@ import { dashboardService } from '../services/api';
 import NotificationCard from '../components/NotificationCard';
 import './Dashboard.css';
 
+interface Estatisticas {
+  agendamentosPendentes: number;
+  reagendamentos: number;
+  cancelamentos: number;
+  atendimentosManuais: number;
+  interacoesHoje: number;
+  pacientesAguardando: number;
+}
+
+interface Notificacao {
+  id: number;
+  type: string;
+  title: string;
+  message: string;
+  timestamp: Date;
+  priority?: 'normal' | 'high';
+}
+
 export default function Dashboard() {
-  const [estatisticas, setEstatisticas] = useState({
+  const [estatisticas, setEstatisticas] = useState<Estatisticas>({
     agendamentosPendentes: 0,
     reagendamentos: 0,
     cancelamentos: 0,
@@ -13,9 +31,9 @@ export default function Dashboard() {
     pacientesAguardando: 0
   });
   
-  const [notificacoes, setNotificacoes] = useState([]);
+  const [notificacoes, setNotificacoes] = useState<Notificacao[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     carregarDados();
@@ -60,14 +78,14 @@ export default function Dashboard() {
           timestamp: new Date(Date.now() - 15 * 60 * 1000),
           priority: 'normal'
         },
-        {
-          id: 3,
-          type: 'secretaria',
-          title: 'Atendimento manual',
-          message: '+55 31 91234-5678',
-          timestamp: new Date(Date.now() - 30 * 60 * 1000),
-          priority: 'high'
-        }
+        // {
+        //   id: 3,
+        //   type: 'secretaria',
+        //   title: 'Atendimento manual',
+        //   message: '+55 31 91234-5678',
+        //   timestamp: new Date(Date.now() - 30 * 60 * 1000),
+        //   priority: 'high'
+        // }
       ]);
     } finally {
       setLoading(false);

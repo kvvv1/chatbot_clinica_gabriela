@@ -1,0 +1,610 @@
+/* WhatsAppModal.css - CORRIGIDO */
+.whatsapp-modal-overlay {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  background: rgba(0, 0, 0, 0.85) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 9999999 !important;
+  padding: 1rem !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+}
+
+.whatsapp-modal {
+  background: #ffffff !important;
+  border-radius: 16px !important;
+  width: 95vw !important;
+  max-width: 1200px !important;
+  height: 90vh !important;
+  max-height: 800px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5) !important;
+  overflow: hidden !important;
+  position: relative !important;
+  z-index: 10000000 !important;
+}
+
+.whatsapp-modal-header {
+  background: #25d366 !important;
+  color: white !important;
+  padding: 1rem 1.5rem !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  flex-shrink: 0 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.modal-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: 1rem !important;
+}
+
+.modal-title h3 {
+  margin: 0 !important;
+  font-size: 1.1rem !important;
+  font-weight: 600 !important;
+}
+
+.phone-number {
+  font-size: 0.9rem !important;
+  opacity: 0.9 !important;
+}
+
+.whatsapp-icon {
+  font-size: 1.5rem !important;
+}
+
+.modal-controls {
+  display: flex !important;
+  gap: 0.5rem !important;
+  align-items: center !important;
+}
+
+.btn-external {
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: white !important;
+  border: none !important;
+  padding: 0.5rem 1rem !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  font-size: 0.875rem !important;
+  transition: all 0.2s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+}
+
+.btn-external:hover {
+  background: rgba(255, 255, 255, 0.3) !important;
+  transform: translateY(-1px) !important;
+}
+
+.btn-close {
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: white !important;
+  border: none !important;
+  font-size: 1.5rem !important;
+  cursor: pointer !important;
+  padding: 0.5rem !important;
+  border-radius: 6px !important;
+  transition: all 0.2s ease !important;
+  width: 32px !important;
+  height: 32px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.btn-close:hover {
+  background: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Tabs */
+.whatsapp-modal-tabs {
+  background: #f8f9fa !important;
+  padding: 0.5rem 1.5rem !important;
+  display: flex !important;
+  gap: 0.5rem !important;
+  border-bottom: 1px solid #e5e7eb !important;
+  flex-shrink: 0 !important;
+}
+
+.tab-button {
+  background: none !important;
+  border: none !important;
+  padding: 0.75rem 1.5rem !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  color: #64748b !important;
+  transition: all 0.2s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+}
+
+.tab-button:hover {
+  background: #e5e7eb !important;
+  color: #374151 !important;
+}
+
+.tab-button.active {
+  background: #25d366 !important;
+  color: white !important;
+}
+
+/* Body */
+.whatsapp-modal-body {
+  flex: 1 !important;
+  padding: 0 !important;
+  background: #f0f0f0 !important;
+  overflow: hidden !important;
+  position: relative !important;
+}
+
+.whatsapp-iframe {
+  width: 100% !important;
+  height: 100% !important;
+  border: none !important;
+  background: white !important;
+}
+
+/* Chat Simulation */
+.whatsapp-chat-simulation {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  background: #e5ddd5 !important;
+}
+
+.chat-header {
+  background: #f0f0f0 !important;
+  padding: 1rem !important;
+  border-bottom: 1px solid #ddd !important;
+  display: flex !important;
+  align-items: center !important;
+  flex-shrink: 0 !important;
+}
+
+.contact-info {
+  display: flex !important;
+  align-items: center !important;
+  gap: 1rem !important;
+}
+
+.avatar {
+  width: 40px !important;
+  height: 40px !important;
+  background: #25d366 !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 1.2rem !important;
+}
+
+.contact-details h4 {
+  margin: 0 !important;
+  font-size: 1rem !important;
+  color: #333 !important;
+}
+
+.status {
+  font-size: 0.8rem !important;
+  color: #666 !important;
+}
+
+.chat-messages {
+  flex: 1 !important;
+  padding: 1.5rem !important;
+  overflow-y: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-end !important;
+  min-height: 400px !important;
+  max-height: 600px !important;
+}
+
+.message {
+  max-width: 75% !important;
+  margin-bottom: 1.5rem !important;
+  padding: 1rem 1.25rem !important;
+  border-radius: 12px !important;
+  position: relative !important;
+  font-size: 1rem !important;
+}
+
+.message.sent {
+  background: #dcf8c6 !important;
+  align-self: flex-end !important;
+  margin-left: auto !important;
+}
+
+.message.received {
+  background: #ffffff !important;
+  align-self: flex-start !important;
+  margin-right: auto !important;
+  border: 1px solid #e5e7eb !important;
+}
+
+.message p {
+  margin: 0 0 0.25rem 0 !important;
+  color: #333 !important;
+  font-size: 1rem !important;
+  line-height: 1.4 !important;
+}
+
+.time {
+  font-size: 0.7rem !important;
+  color: #666 !important;
+}
+
+.message-input-area {
+  display: flex !important;
+  gap: 0.75rem !important;
+  padding: 1.25rem !important;
+  background: #f0f0f0 !important;
+  border-top: 1px solid #ddd !important;
+  flex-shrink: 0 !important;
+}
+
+.message-input {
+  flex: 1 !important;
+  padding: 1rem 1.25rem !important;
+  border: 1px solid #ddd !important;
+  border-radius: 25px !important;
+  outline: none !important;
+  font-size: 1rem !important;
+}
+
+.message-input:focus {
+  border-color: #25d366 !important;
+}
+
+.send-button {
+  background: #25d366 !important;
+  color: white !important;
+  border: none !important;
+  width: 48px !important;
+  height: 48px !important;
+  border-radius: 50% !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.2s ease !important;
+  font-size: 1.2rem !important;
+}
+
+.send-button:hover:not(:disabled) {
+  background: #20b358 !important;
+  transform: scale(1.05) !important;
+}
+
+.send-button:disabled {
+  background: #ccc !important;
+  cursor: not-allowed !important;
+}
+
+/* Templates */
+.templates-container {
+  padding: 1.5rem !important;
+  height: 100% !important;
+  overflow-y: auto !important;
+}
+
+.templates-container h4 {
+  margin: 0 0 1rem 0 !important;
+  color: #374151 !important;
+  font-size: 1.125rem !important;
+}
+
+.templates-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 1rem !important;
+}
+
+.template-item {
+  background: white !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 12px !important;
+  padding: 1rem !important;
+  transition: all 0.2s ease !important;
+}
+
+.template-item:hover {
+  border-color: #25d366 !important;
+  box-shadow: 0 4px 12px rgba(37, 211, 102, 0.1) !important;
+}
+
+.template-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  margin-bottom: 0.75rem !important;
+}
+
+.template-header h5 {
+  margin: 0 !important;
+  color: #374151 !important;
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+}
+
+.btn-use-template {
+  background: #25d366 !important;
+  color: white !important;
+  border: none !important;
+  padding: 0.5rem 1rem !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  transition: all 0.2s ease !important;
+}
+
+.btn-use-template:hover {
+  background: #20b358 !important;
+  transform: translateY(-1px) !important;
+}
+
+.template-text {
+  margin: 0 !important;
+  color: #6b7280 !important;
+  font-size: 0.875rem !important;
+  line-height: 1.5 !important;
+}
+
+/* Info */
+.info-container {
+  padding: 1.5rem !important;
+  height: 100% !important;
+  overflow-y: auto !important;
+}
+
+.info-container h4 {
+  margin: 0 0 1rem 0 !important;
+  color: #374151 !important;
+  font-size: 1.125rem !important;
+}
+
+.info-grid {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 1rem !important;
+}
+
+.info-item {
+  background: white !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 8px !important;
+  padding: 1rem !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+}
+
+.info-label {
+  font-weight: 600 !important;
+  color: #374151 !important;
+}
+
+.info-value {
+  color: #6b7280 !important;
+  text-align: right !important;
+}
+
+/* Footer */
+.whatsapp-modal-footer {
+  background: #f8f9fa !important;
+  padding: 1rem 1.5rem !important;
+  border-top: 1px solid #e5e7eb !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  flex-shrink: 0 !important;
+}
+
+.footer-info {
+  color: #666 !important;
+  font-size: 0.9rem !important;
+}
+
+.paciente-info {
+  display: flex !important;
+  gap: 2rem !important;
+  color: #64748b !important;
+  font-size: 0.875rem !important;
+}
+
+.quick-actions {
+  display: flex !important;
+  gap: 1rem !important;
+}
+
+.btn-quick-action {
+  padding: 0.5rem 1rem !important;
+  border: 1px solid #d1d5db !important;
+  background: white !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  font-size: 0.875rem !important;
+  transition: all 0.2s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+}
+
+.btn-quick-action:hover {
+  background: #f3f4f6 !important;
+  border-color: #25d366 !important;
+}
+
+.btn-quick-action.btn-finish {
+  background: #25d366 !important;
+  color: white !important;
+  border-color: #25d366 !important;
+}
+
+.btn-quick-action.btn-finish:hover {
+  background: #20b358 !important;
+}
+
+.btn-template, .btn-whatsapp-web {
+  padding: 0.5rem 1rem !important;
+  border: 1px solid #d1d5db !important;
+  background: white !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  font-size: 0.875rem !important;
+  transition: all 0.2s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+}
+
+.btn-template:hover {
+  background: #f3f4f6 !important;
+  border-color: #25d366 !important;
+}
+
+.btn-whatsapp-web {
+  background: #25d366 !important;
+  color: white !important;
+  border-color: #25d366 !important;
+}
+
+.btn-whatsapp-web:hover {
+  background: #20b358 !important;
+}
+
+.btn-finish {
+  background: #25d366 !important;
+  color: white !important;
+  border-color: #25d366 !important;
+}
+
+.btn-finish:hover {
+  background: #20b358 !important;
+}
+
+/* Botão WhatsApp em todos os cards */
+.btn-whatsapp, .btn-contatar-whatsapp {
+  background: linear-gradient(135deg, #25d366 0%, #20b358 100%) !important;
+  color: white !important;
+  border: none !important;
+  padding: 0.625rem 1.25rem !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  font-weight: 600 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  transition: all 0.3s ease !important;
+  font-size: 0.875rem !important;
+}
+
+.btn-whatsapp:hover, .btn-contatar-whatsapp:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 12px rgba(37, 211, 102, 0.4) !important;
+}
+
+/* Garantias adicionais de z-index */
+.whatsapp-modal-overlay {
+  z-index: 9999999 !important;
+  position: fixed !important;
+  isolation: isolate !important;
+}
+
+.whatsapp-modal {
+  z-index: 10000000 !important;
+  position: relative !important;
+  isolation: isolate !important;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .whatsapp-modal {
+    width: 98vw !important;
+    height: 90vh !important;
+  }
+  
+  .chat-messages {
+    min-height: 300px !important;
+    max-height: 500px !important;
+    padding: 1rem !important;
+  }
+  
+  .whatsapp-modal-header {
+    padding: 0.75rem 1rem !important;
+  }
+  
+  .modal-title h3 {
+    font-size: 1rem !important;
+  }
+  
+  .whatsapp-modal-tabs {
+    padding: 0.5rem 1rem !important;
+    overflow-x: auto !important;
+  }
+  
+  .tab-button {
+    padding: 0.5rem 1rem !important;
+    font-size: 0.8rem !important;
+    white-space: nowrap !important;
+  }
+  
+  .whatsapp-modal-footer {
+    flex-direction: column !important;
+    gap: 1rem !important;
+    align-items: flex-start !important;
+    padding: 1rem !important;
+  }
+  
+  .paciente-info {
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+  }
+  
+  .quick-actions {
+    width: 100% !important;
+    justify-content: space-between !important;
+  }
+  
+  .btn-quick-action {
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.8rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .whatsapp-modal {
+    width: 98vw !important;
+    height: 95vh !important;
+  }
+  
+  .modal-controls {
+    gap: 0.5rem !important;
+  }
+  
+  .btn-external {
+    padding: 0.4rem 0.8rem !important;
+    font-size: 0.8rem !important;
+  }
+  
+  .templates-container,
+  .info-container {
+    padding: 1rem !important;
+  }
+} 
