@@ -59,7 +59,7 @@ export default function NotificationCard({ notification }: NotificationCardProps
   };
 
   // Função para truncar texto muito longo
-  const truncateText = (text: string, maxLength: number = 25) => {
+  const truncateText = (text: string, maxLength: number = 50) => {
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';
   };
@@ -74,8 +74,8 @@ export default function NotificationCard({ notification }: NotificationCardProps
         backgroundColor: '#ffffff',
         border: '1px solid #e5e7eb',
         borderRadius: '8px',
-        padding: '16px',
-        marginBottom: '12px',
+        padding: '18px',
+        marginBottom: '16px',
         borderLeft: `4px solid ${getTypeColor(notification.type)}`,
         boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
         transition: 'all 0.2s ease',
@@ -112,7 +112,7 @@ export default function NotificationCard({ notification }: NotificationCardProps
         </span>
       )}
       
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
         <div 
           style={{
             fontSize: '20px',
@@ -126,11 +126,12 @@ export default function NotificationCard({ notification }: NotificationCardProps
         <div style={{ flex: 1, minWidth: 0 }}>
           <h4 
             style={{
-              margin: '0 0 4px 0',
+              margin: '0 0 6px 0',
               fontSize: '14px',
               fontWeight: '600',
               color: '#1f2937',
-              lineHeight: '1.4'
+              lineHeight: '1.4',
+              maxWidth: '100%'
             }}
           >
             {notification.title}
@@ -141,8 +142,9 @@ export default function NotificationCard({ notification }: NotificationCardProps
               margin: '0 0 8px 0',
               fontSize: '13px',
               color: '#6b7280',
-              lineHeight: '1.4',
-              wordBreak: 'break-word'
+              lineHeight: '1.5',
+              wordBreak: 'break-word',
+              maxWidth: '100%'
             }}
             title={notification.message}
           >

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { dashboardService } from '../services/api';
 import WhatsAppModal from '../components/WhatsAppModal';
 import './Espera.css';
@@ -244,14 +245,7 @@ export default function Espera() {
     }
   };
 
-  const getPrioridadeCor = (prioridade) => {
-    switch (prioridade) {
-      case 'alta': return '#ef4444';
-      case 'media': return '#f59e0b';
-      case 'baixa': return '#10b981';
-      default: return '#6b7280';
-    }
-  };
+
 
   if (loading) {
     return (
@@ -279,7 +273,7 @@ export default function Espera() {
       <div className="espera-list">
         {listaEspera.length > 0 ? (
           listaEspera.map((item) => (
-            <div key={item.id} className="lista-espera-card" style={{ borderColor: getPrioridadeCor(item.prioridade) }}>
+            <div key={item.id} className="lista-espera-card">
               {/* Coluna Esquerda - Dados do Paciente */}
               <div className="paciente-info-espera">
                 <div className="paciente-nome">
@@ -415,7 +409,7 @@ export default function Espera() {
       />
 
       {/* Modal de Detalhes */}
-      {showDetalhesModal && selectedDetalhes && (
+      {showDetalhesModal && selectedDetalhes && createPortal(
         <div className="modal-overlay" onClick={() => setShowDetalhesModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
@@ -459,11 +453,12 @@ export default function Espera() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Modal de Agendamento */}
-      {showAgendamentoModal && selectedAgendamento && (
+      {showAgendamentoModal && selectedAgendamento && createPortal(
         <div className="modal-overlay" onClick={() => setShowAgendamentoModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
@@ -538,7 +533,8 @@ export default function Espera() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

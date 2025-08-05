@@ -214,10 +214,7 @@
   box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
 }
 
-.btn-contatar::before {
-  content: '💬';
-  font-size: 1rem;
-}
+/* Removido o ::before para o botão WhatsApp para evitar duplicação */
 
 /* Botão WhatsApp específico para reagendamentos */
 .btn-contatar-whatsapp {

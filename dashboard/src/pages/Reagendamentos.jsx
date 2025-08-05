@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { dashboardService } from '../services/api';
+import WhatsAppModal from '../components/WhatsAppModal';
 import './Reagendamentos.css';
 
 export default function Reagendamentos() {
@@ -9,7 +10,8 @@ export default function Reagendamentos() {
   const [error, setError] = useState(null);
   
   // Estados dos modais
-  const [modalContatar, setModalContatar] = useState({ show: false, paciente: null });
+  const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
+  const [selectedPaciente, setSelectedPaciente] = useState(null);
   const [modalAgendado, setModalAgendado] = useState({ show: false, paciente: null });
   const [modalEspera, setModalEspera] = useState({ show: false, paciente: null });
   const [modalNaoQuer, setModalNaoQuer] = useState({ show: false, paciente: null });
@@ -68,12 +70,18 @@ export default function Reagendamentos() {
     return new Date(data).toLocaleDateString('pt-BR');
   };
 
-  // Funções para abrir modais
-  const abrirModalContatar = (paciente) => {
-    setModalContatar({ show: true, paciente });
-    setFormData({ mensagem: '', novaData: '', novoHorario: '', motivo: '' });
+  // Função para abrir WhatsAppModal
+  const handleContatarWhatsApp = (reagendamento) => {
+    setSelectedPaciente({
+      nome: reagendamento.paciente,
+      telefone: reagendamento.telefone,
+      dataHora: `${formatarData(reagendamento.dataAtual)} às ${reagendamento.horarioAtual}`,
+      motivo: 'Solicitação de reagendamento'
+    });
+    setShowWhatsAppModal(true);
   };
 
+  // Funções para abrir modais
   const abrirModalAgendado = (paciente) => {
     setModalAgendado({ show: true, paciente });
     setFormData({ mensagem: '', novaData: '', novoHorario: '', motivo: '' });
@@ -91,7 +99,6 @@ export default function Reagendamentos() {
 
   // Funções para fechar modais
   const fecharModal = () => {
-    setModalContatar({ show: false, paciente: null });
     setModalAgendado({ show: false, paciente: null });
     setModalEspera({ show: false, paciente: null });
     setModalNaoQuer({ show: false, paciente: null });
@@ -99,18 +106,6 @@ export default function Reagendamentos() {
   };
 
   // Funções para executar ações
-  const executarContatar = async () => {
-    try {
-      // Aqui você implementaria a lógica para enviar mensagem
-      console.log('Contatando paciente:', modalContatar.paciente, formData.mensagem);
-      alert('Mensagem enviada com sucesso!');
-      fecharModal();
-    } catch (error) {
-      console.error('Erro ao contatar paciente:', error);
-      alert('Erro ao enviar mensagem');
-    }
-  };
-
   const executarAgendado = async () => {
     try {
       // Aqui você implementaria a lógica para confirmar agendamento
@@ -190,9 +185,9 @@ export default function Reagendamentos() {
               <div className="reagendamento-actions">
                 <button 
                   className="btn-contatar"
-                  onClick={() => abrirModalContatar(reagendamento)}
+                  onClick={() => handleContatarWhatsApp(reagendamento)}
                 >
-                  Contatar
+                   WhatsApp
                 </button>
                 <button 
                   className="btn-agendado"
@@ -221,38 +216,6 @@ export default function Reagendamentos() {
           </div>
         )}
       </div>
-
-      {/* Modal Contatar */}
-      {modalContatar.show && createPortal(
-        <div className="modal-overlay-reagendamento" onClick={fecharModal}>
-          <div className="modal-reagendamento" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header-reagendamento">
-              <h3>💬 Contatar Paciente</h3>
-              <button className="close-btn-reagendamento" onClick={fecharModal}>×</button>
-            </div>
-            <div className="modal-body-reagendamento">
-              <p><strong>👤 Paciente:</strong> {modalContatar.paciente?.paciente}</p>
-              <p><strong>📱 Telefone:</strong> {modalContatar.paciente?.telefone}</p>
-              <p><strong>📅 Agendamento Atual:</strong> {formatarData(modalContatar.paciente?.dataAtual)} às {modalContatar.paciente?.horarioAtual}</p>
-              
-              <div className="form-group-reagendamento">
-                <label>📝 Mensagem para o paciente:</label>
-                <textarea
-                  value={formData.mensagem}
-                  onChange={(e) => setFormData({...formData, mensagem: e.target.value})}
-                  placeholder="Digite sua mensagem..."
-                  rows="4"
-                />
-              </div>
-            </div>
-            <div className="modal-actions-reagendamento">
-              <button className="btn-cancelar-reagendamento" onClick={fecharModal}>Cancelar</button>
-              <button className="btn-confirmar-aprovar-reagendamento" onClick={executarContatar}>Enviar Mensagem</button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
 
       {/* Modal Agendado */}
       {modalAgendado.show && createPortal(
@@ -367,6 +330,13 @@ export default function Reagendamentos() {
         </div>,
         document.body
       )}
+
+      {/* WhatsApp Modal */}
+      <WhatsAppModal 
+        isOpen={showWhatsAppModal}
+        onClose={() => setShowWhatsAppModal(false)}
+        paciente={selectedPaciente}
+      />
     </div>
   );
 } 

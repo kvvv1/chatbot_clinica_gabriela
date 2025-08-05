@@ -1,11 +1,10 @@
-# WhatsApp Chatbot + Typebot + GestãoDS
+# WhatsApp Chatbot + GestãoDS
 
-Um chatbot inteligente para WhatsApp que integra com Typebot e sistema GestãoDS para automação de vendas e atendimento ao cliente.
+Um chatbot inteligente para WhatsApp que integra com sistema GestãoDS para automação de vendas e atendimento ao cliente.
 
 ## 🚀 Funcionalidades
 
 - **Integração com Z-API**: Recebe e envia mensagens via WhatsApp
-- **Typebot Integration**: Chatbot inteligente com fluxos conversacionais
 - **GestãoDS CRM**: Gerenciamento de leads e oportunidades
 - **Memory Store**: Gerenciamento de estado das conversas
 - **Webhook**: Endpoint para receber mensagens do Z-API
@@ -22,7 +21,6 @@ whatsapp-chatbot/
 ├── controllers/
 │   └── messageController.js # Controlador de mensagens
 ├── services/
-│   ├── typebotService.js    # Integração com Typebot
 │   ├── zapiService.js       # Integração com Z-API
 │   └── gestaodsService.js   # Integração com GestãoDS
 ├── utils/
@@ -55,7 +53,6 @@ whatsapp-chatbot/
    PORT=3000
    ZAPI_API_KEY=your_zapi_api_key
    ZAPI_INSTANCE_ID=your_instance_id
-   TYPEBOT_API_KEY=your_typebot_api_key
    GESTAODS_API_KEY=your_gestaods_api_key
    ```
 
@@ -76,12 +73,6 @@ whatsapp-chatbot/
 2. Crie uma instância do WhatsApp
 3. Obtenha sua API Key e Instance ID
 4. Configure o webhook para: `https://seu-dominio.com/webhook`
-
-### Typebot Setup
-1. Crie uma conta no [Typebot](https://typebot.io)
-2. Crie seu chatbot com os fluxos desejados
-3. Obtenha sua API Key
-4. Configure as variáveis de ambiente
 
 ### GestãoDS Setup
 1. Configure sua conta no GestãoDS
@@ -145,10 +136,9 @@ Recebe mensagens do Z-API
 
 1. **Recebimento**: Z-API envia mensagem para `/webhook`
 2. **Processamento**: `messageController` processa a mensagem
-3. **Typebot**: Integração com chatbot inteligente
-4. **GestãoDS**: Criação/atualização de leads
-5. **Resposta**: Envio da resposta via Z-API
-6. **Memória**: Armazenamento do estado da conversa
+3. **GestãoDS**: Criação/atualização de leads
+4. **Resposta**: Envio da resposta via Z-API
+5. **Memória**: Armazenamento do estado da conversa
 
 ## 🧠 Memory Store
 
