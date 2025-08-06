@@ -1004,9 +1004,11 @@ async function handleConfirmandoPaciente(phone, message) {
       break;
 
     case '2':
-      setState(phone, 'confirmando_paciente');
+      // como não é você, pede o CPF de novo
+      setState(phone, 'aguardando_cpf');
       return (
-        "Digite seu nome completo novamente:\n\n" +
+        "❌ Entendi, não é você. Por favor, digite seu *CPF* novamente (apenas números):\n\n" +
+        "Exemplo: 12345678901\n\n" +
         "Digite *voltar* para retornar ao menu principal."
       );
 
