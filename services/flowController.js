@@ -500,6 +500,18 @@ function handleMenuPrincipal(phone, message) {
   }
 
   switch (message) {
+    case 'menu':
+      return (
+        obterSaudacao() + "\n\n" +
+        "Sou seu assistente virtual. Como posso ajudar?\n\n" +
+        "*Digite o número da opção desejada:*\n\n" +
+        "1️⃣ Agendar consulta\n" +
+        "2️⃣ Ver meus agendamentos\n" +
+        "3️⃣ Lista de espera\n" +
+        "4️⃣ Falar com secretária\n\n" +
+        "Digite 0 para sair"
+      );
+
     case '1':
       setState(phone, 'aguardando_cpf');
       setContext(phone, { acao: 'agendar' });
@@ -507,7 +519,7 @@ function handleMenuPrincipal(phone, message) {
         "📅 *Agendamento de Consulta*\n\n" +
         "Por favor, digite seu CPF (apenas números):\n\n" +
         "Exemplo: 12345678901\n\n" +
-        "Digite *voltar* para retornar ao menu principal."
+        "Digite *'voltar'* para retornar ao menu principal."
       );
 
     case '2':
@@ -516,7 +528,7 @@ function handleMenuPrincipal(phone, message) {
       return (
         "📋 Visualizar Agendamentos\n\n" +
         "Por favor, digite seu *nome completo* para vermos seus agendamentos.\n\n" +
-        "Digite *voltar* para retornar ao menu principal."
+        "Digite *'voltar'* para retornar ao menu principal."
       );
 
     case '3':
@@ -784,12 +796,13 @@ async function handleConfirmandoCadastro(phone, message) {
           context.dadosCadastro = resultadoCadastro.dados;
           setContext(phone, context);
           
-          setState(phone, 'cadastro_confirmado');
+          // Após cadastro bem-sucedido, já coloca o usuário no estado de menu
+          setState(phone, 'menu_principal');
           return (
             "✅ *Cadastro realizado com sucesso!*\n\n" +
             `Bem-vindo(a), *${context.nome}*!\n\n` +
-            "Agora vamos continuar com o agendamento...\n\n" +
-            "Digite *menu* para voltar ao início."
+            // Chama o menu imediatamente
+            handleMenuPrincipal(phone, 'menu')
           );
         } else {
           console.error(`[FLOW] Erro no cadastro: ${resultadoCadastro.mensagem}`);
@@ -1240,23 +1253,22 @@ async function handleEscolhendoHorario(phone, message) {
   }
 }
 
-// 🏁 Estados finais
+// 📋 Função genérica para estados finais
 function handleEstadoFinal(phone, message) {
   const messageLower = message.toLowerCase().trim();
 
   if (messageLower === 'menu') {
-    setState(phone, 'inicio');
+    // Vai para o menu principal e exibe as opções
+    setState(phone, 'menu_principal');
     setContext(phone, {});
     // Limpeza ao finalizar
     delete agendamentosPendentes[phone];
     delete agendamentoSelecionado[phone];
-    return (
-      "🔄 Voltando ao início...\n\n" +
-      "Digite *oi* para começar novamente."
-    );
+    // Reutiliza sua função de menu
+    return handleMenuPrincipal(phone, 'menu');
   } else {
     return (
-      "Digite *menu* para voltar ao início do atendimento."
+      "Digite *menu* para acessar o menu principal."
     );
   }
 }
