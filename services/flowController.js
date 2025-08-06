@@ -100,6 +100,20 @@ function calcularTipoConsulta(ultimaDataConsulta) {
   }
 }
 
+// ✅ Função para determinar saudação baseada no horário
+function obterSaudacao() {
+  const agora = new Date();
+  const hora = agora.getHours();
+  
+  if (hora >= 6 && hora < 12) {
+    return "🌅 Bom dia! Bem-vindo(a) à Clínica Nassif! 🏥";
+  } else if (hora >= 12 && hora < 18) {
+    return "☀️ Boa tarde! Bem-vindo(a) à Clínica Nassif! 🏥";
+  } else {
+    return "🌙 Boa noite! Bem-vindo(a) à Clínica Nassif! 🏥";
+  }
+}
+
 // ✅ Função para validar contexto antes de enviar para a API
 function validarContextoAgendamento(context) {
   const camposObrigatorios = [
@@ -446,7 +460,7 @@ function handleInicio(phone, message) {
     setState(phone, 'menu_principal');
 
     const resposta = (
-      "🌅 Bom dia! Bem-vindo(a) à Clínica Nassif! 🏥\n\n" +
+      obterSaudacao() + "\n\n" +
       "Sou seu assistente virtual. Como posso ajudar?\n\n" +
       "*Digite o número da opção desejada:*\n\n" +
       "1️⃣ *Agendar consulta*\n" +
@@ -459,7 +473,7 @@ function handleInicio(phone, message) {
     return resposta;
   } else {
     return (
-      "🌅 Olá! Bem-vindo(a) à Clínica Nassif! 🏥\n\n" +
+      obterSaudacao() + "\n\n" +
       "Digite *oi* para começar o atendimento e ver as opções disponíveis.\n\n" +
       "💡 *Dica:* Você também pode digitar \"meus agendamentos\" para ver suas consultas diretamente."
     );
@@ -1367,7 +1381,7 @@ async function flowController(message, phone) {
       setContext(phone, {});
       return (
         "🔙 *Retornando ao menu principal...*\n\n" +
-        "🌅 Bom dia! Bem-vindo(a) à Clínica Nassif! 🏥\n\n" +
+        obterSaudacao() + "\n\n" +
         "Sou seu assistente virtual. Como posso ajudar?\n\n" +
         "*Digite o número da opção desejada:*\n\n" +
         "1️⃣ *Agendar consulta*\n" +
