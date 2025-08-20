@@ -20,21 +20,12 @@ export default function Cancelamentos() {
     try {
       setLoading(true);
       const dados = await dashboardService.getCancelamentos();
-      setCancelamentos(dados || []);
+      setCancelamentos(Array.isArray(dados) ? dados : []);
       setError(null);
     } catch (err) {
       console.error('Erro ao carregar cancelamentos:', err);
       setError('Erro ao carregar cancelamentos');
-      // Dados mock
-      setCancelamentos([
-        {
-          id: 1,
-          paciente: 'Carlos Silva',
-          telefone: '+55 31 91234-5678',
-          data: '2024-01-18',
-          horario: '15:00'
-        }
-      ]);
+      setCancelamentos([]);
     } finally {
       setLoading(false);
     }
@@ -52,6 +43,17 @@ export default function Cancelamentos() {
       motivo: 'Cancelamento solicitado'
     });
     setShowWhatsAppModal(true);
+  };
+
+  const aprovarCancelamento = async (id) => {
+    try {
+      await dashboardService.aprovarCancelamento(id);
+      setCancelamentos(prev => prev.filter(item => item.id !== id));
+      alert('Cancelamento aprovado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao aprovar cancelamento:', error);
+      alert('Erro ao aprovar cancelamento');
+    }
   };
 
   if (loading) {
@@ -102,6 +104,12 @@ export default function Cancelamentos() {
                 </button>
                 <button className="btn-call">
                   📞 Ligar
+                </button>
+                <button 
+                  className="btn-confirmar-cancelamento"
+                  onClick={() => aprovarCancelamento(cancelamento.id)}
+                >
+                  Confirmar Cancelamento
                 </button>
               </div>
             </div>

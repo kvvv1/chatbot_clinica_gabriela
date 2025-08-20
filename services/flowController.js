@@ -1,4 +1,5 @@
 const memoryStore = require('../utils/memoryStore');
+const { supabase } = require('./supabaseClient');
 const axios = require('axios');
 const moment = require('moment');
 const dayjs = require('dayjs');
@@ -50,6 +51,114 @@ async function recuperarContexto(userPhone) {
 function formatarDataHora(dataString, horaString) {
   const [dia, mes, ano] = dataString.split('/');
   return `${ano}-${mes}-${dia} ${horaString}`;
+}
+
+// ==============================
+// Supabase helpers (no-op se off)
+// ==============================
+async function persistSessionToSupabase(phone) {
+  try {
+    if (!supabase) return;
+    const state = getState(phone);
+    const context = getContext(phone);
+    await supabase.from('sessions').upsert({ phone, state, context, updated_at: new Date().toISOString() }, { onConflict: 'phone' });
+  } catch (error) {
+    console.error('[Supabase] persistSession erro:', error.message);
+  }
+}
+
+async function logMessageToSupabase(phone, direction, content) {
+  try {
+    if (!supabase) return;
+    const state = getState(phone);
+    const context = getContext(phone);
+    await supabase.from('messages').insert({ phone, direction, content, state, context });
+  } catch (error) {
+    console.error('[Supabase] logMessage erro:', error.message);
+  }
+}
+
+async function upsertPatient({ cpf, name, phone, email }) {
+  try {
+    if (!supabase || !cpf) return;
+    await supabase.from('patients').upsert({ cpf, name, phone, email });
+  } catch (error) {
+    console.error('[Supabase] upsertPatient erro:', error.message);
+  }
+}
+
+async function createWaitlistEntry({ cpf, name, phone, email, motivo, prioridade }) {
+  try {
+    if (!supabase) return;
+    await supabase.from('waitlist').insert({ cpf: cpf || null, name: name || null, phone, email: email || null, motivo: motivo || null, prioridade: prioridade || 'media' });
+  } catch (error) {
+    console.error('[Supabase] createWaitlistEntry erro:', error.message);
+  }
+}
+
+async function createSecretaryTicket({ phone, motivo }) {
+  try {
+    if (!supabase) return;
+    await supabase.from('secretary_tickets').insert({ phone, motivo: motivo || 'Atendimento manual solicitado', status: 'pendente' });
+  } catch (error) {
+    console.error('[Supabase] createSecretaryTicket erro:', error.message);
+  }
+}
+
+async function createNotification({ type, title, message, priority }) {
+  try {
+    if (!supabase) return;
+    await supabase.from('notifications').insert({ type, title, message, priority: priority || 'normal' });
+  } catch (error) {
+    console.error('[Supabase] createNotification erro:', error.message);
+  }
+}
+
+async function insertAppointmentRequest({ cpf, phone, requested_date, requested_time, tipo, status, motivo }) {
+  try {
+    if (!supabase) return;
+    await supabase.from('appointment_requests').insert({
+      cpf,
+      phone,
+      requested_date,
+      requested_time,
+      tipo,
+      status: status || 'approved',
+      motivo: motivo || null
+    });
+  } catch (error) {
+    console.error('[Supabase] insertAppointmentRequest erro:', error.message);
+  }
+}
+
+async function insertRescheduleRequest({ phone, current_datetime, requested_date, requested_time, token_agendamento, status }) {
+  try {
+    if (!supabase) return;
+    await supabase.from('reschedule_requests').insert({
+      phone,
+      current_datetime: current_datetime || null,
+      requested_date: requested_date || null,
+      requested_time: requested_time || null,
+      token_agendamento: token_agendamento || null,
+      status: status || 'pending'
+    });
+  } catch (error) {
+    console.error('[Supabase] insertRescheduleRequest erro:', error.message);
+  }
+}
+
+async function insertCancelRequest({ phone, agendamento_token, motivo, status }) {
+  try {
+    if (!supabase) return;
+    await supabase.from('cancel_requests').insert({
+      phone,
+      agendamento_token: agendamento_token || null,
+      motivo: motivo || null,
+      status: status || 'pending'
+    });
+  } catch (error) {
+    console.error('[Supabase] insertCancelRequest erro:', error.message);
+  }
 }
 
 function calcularDataFimAgendamento(dataString, horaString) {
@@ -142,18 +251,20 @@ function validarContextoAgendamento(context) {
 // 🔍 Função para buscar datas disponíveis de forma segura
 async function buscarDatasDisponiveis(token) {
   try {
-    const response = await gestaodsService.buscarDiasDisponiveis(token);
+    const diasResponse = await gestaodsService.buscarDiasDisponiveis(token);
 
-    const dias = response?.data || [];
+    const dias = Array.isArray(diasResponse?.data)
+      ? diasResponse.data
+      : Array.isArray(diasResponse)
+        ? diasResponse
+        : [];
 
-    // Verifica se veio um array
     if (!Array.isArray(dias)) {
       console.error('❌ A resposta da API não retornou um array:', dias);
       return null;
     }
 
-    // Filtra apenas os dias disponíveis
-    const diasDisponiveis = dias.filter(d => d.disponivel);
+    const diasDisponiveis = dias.filter(d => d.disponivel !== false);
 
     return diasDisponiveis;
   } catch (error) {
@@ -165,33 +276,34 @@ async function buscarDatasDisponiveis(token) {
 // 🕐 Função para buscar horários disponíveis de forma segura
 async function buscarHorariosDisponiveis(token, dataSelecionada) {
   try {
-    const response = await gestaodsService.buscarHorariosDisponiveis(token, dataSelecionada);
+    const horariosResponse = await gestaodsService.buscarHorariosDisponiveis(token, dataSelecionada);
 
-    let horarios = response?.data;
+    let horarios = Array.isArray(horariosResponse?.data)
+      ? horariosResponse.data
+      : Array.isArray(horariosResponse)
+        ? horariosResponse
+        : [];
 
-    // Verifica se é um array
     if (!Array.isArray(horarios)) {
       console.error('❌ Formato inesperado dos horários:', horarios);
       return null;
     }
 
-    // Função para converter string "HH:MM" em número para comparação (ex: "08:30" → 8.5)
     const horaParaNumero = (hora) => {
-      const [h, m] = hora.split(':').map(Number);
-      return h + m / 60;
+      const [h, m] = String(hora).split(':').map(Number);
+      return h + (isNaN(m) ? 0 : m) / 60;
     };
 
-    // Filtros: exclui horários entre 08:00-09:00, 13:30-14:00 e após 17:00
     horarios = horarios.filter(horario => {
-      const horaNum = horaParaNumero(horario);
+      const horaNum = horaParaNumero(horario?.hora_inicio || horario);
 
       const dentroDoHorario =
-        !(horaNum >= 8 && horaNum < 9) &&         // 08:00–08:59
-        !(horaNum >= 13.5 && horaNum < 14) &&     // 13:30–13:59
-        horaNum < 17;                             // Até 16:59
+        !(horaNum >= 8 && horaNum < 9) &&
+        !(horaNum >= 13.5 && horaNum < 14) &&
+        horaNum < 17;
 
       return dentroDoHorario;
-    });
+    }).map(horario => (typeof horario === 'string' ? horario : (horario.hora_inicio || horario)));
 
     return horarios;
   } catch (error) {
@@ -298,8 +410,8 @@ async function visualizarAgendamentosPorNome(nomePaciente, userPhone) {
     dataFinal.setMonth(dataFinal.getMonth() + 3);
     const dataFinalFormatada = dataFinal.toLocaleDateString('pt-BR'); // ex: 04/11/2025
 
-    const tokenFixo = 'e735db8caae86d0a9763cbc6184767d239cb72bd';
-    const url = `https://apidev.gestaods.com.br/api/dados-agendamento/listagem/${tokenFixo}`;
+    const tokenListagem = process.env.GESTAODS_TOKEN;
+    const url = `https://apidev.gestaods.com.br/api/dados-agendamento/listagem/${tokenListagem}`;
 
     console.log('[VisualizarAgendamentosPorNome] Chamando API:', url, {
       data_inicial: dataInicial,
@@ -399,6 +511,8 @@ function getState(phone) {
 function setState(phone, state) {
   userStates[phone] = state;
   console.log(`🔄 Estado do usuário ${phone} alterado para: ${state}`);
+  // Persistir sessão (best effort)
+  persistSessionToSupabase(phone);
 }
 
 function getContext(phone) {
@@ -410,12 +524,91 @@ function getContext(phone) {
 
 function setContext(phone, context) {
   userContext[phone] = { ...userContext[phone], ...context };
+  // Persistir sessão (best effort)
+  persistSessionToSupabase(phone);
 }
 
 // 📝 Aguardando nome para cadastro
-function handleAguardandoNome(phone, message) {
+async function handleAguardandoNome(phone, message) {
   const messageLower = message.toLowerCase().trim();
 
+  const context = getContext(phone);
+
+  // Fluxo específico: Lista de espera pede apenas o nome
+  if (context.acao === 'lista_espera') {
+    if (messageLower === 'voltar') {
+      setState(phone, 'menu_principal');
+      setContext(phone, {});
+      return handleMenuPrincipal(phone, 'menu');
+    }
+
+    context.nome = message;
+    setContext(phone, context);
+
+    // Cria entrada na waitlist apenas com nome e telefone
+    try {
+      await createWaitlistEntry({
+        cpf: context.cpf || null,
+        name: context.nome,
+        phone,
+        email: context.email || null,
+        motivo: 'Lista de espera via chatbot',
+        prioridade: 'media'
+      });
+      await createNotification({ type: 'espera', title: 'Novo na lista de espera', message: `Telefone ${phone} - ${context.nome}` });
+    } catch (e) {
+      console.error('[Waitlist] erro ao criar entrada:', e.message);
+    }
+
+    setState(phone, 'lista_espera_confirmada');
+    return (
+      "⏳ *Lista de Espera*\n\n" +
+      `✅ ${context.nome}, você foi adicionado(a) à lista de espera!\n` +
+      "Entraremos em contato quando houver vaga.\n\n" +
+      "Digite *menu* para voltar ao início."
+    );
+  }
+
+  // Fluxo secretaria: ao receber nome, cria ticket e notificação e define estado adequado
+  if (context.acao === 'secretaria') {
+    if (messageLower === 'voltar') {
+      setState(phone, 'menu_principal');
+      setContext(phone, {});
+      return handleMenuPrincipal(phone, 'menu');
+    }
+
+    context.nome = message;
+    setContext(phone, context);
+
+    try {
+      await createSecretaryTicket({ phone, motivo: `Atendimento manual solicitado por ${context.nome}` });
+      await createNotification({ type: 'secretaria', title: 'Novo atendimento manual', message: `${context.nome} - ${phone}`, priority: 'alta' });
+    } catch (e) {
+      console.warn('[Secretaria] falha ao registrar ticket/notificação:', e.message);
+    }
+
+    // Se fora de horário, finaliza e informa. Se dentro, aguarda atendimento humano.
+    if (context.foraHorario) {
+      setState(phone, 'finalizado');
+      return (
+        `✅ Nome registrado: *${context.nome}*\n\n` +
+        "🕐 *A clínica está fora do horário de atendimento.*\n\n" +
+        "📅 *Horário de Atendimento:*\n" +
+        "Segunda a Sexta, das 8h às 18h\n" +
+        "Sábado, das 8h às 12h\n\n" +
+        "Entraremos em contato assim que o atendimento for retomado."
+      );
+    } else {
+      setState(phone, 'aguardando_atendimento_secretaria');
+      return (
+        `✅ Nome registrado: *${context.nome}*\n\n` +
+        "👩‍💼 Seu atendimento foi direcionado para a secretária. Por favor, aguarde.\n\n" +
+        "Digite *menu* para voltar ao início."
+      );
+    }
+  }
+
+  // Fluxo padrão (cadastro)
   if (messageLower === 'voltar') {
     setState(phone, 'aguardando_cpf');
     return (
@@ -424,7 +617,6 @@ function handleAguardandoNome(phone, message) {
     );
   }
 
-  const context = getContext(phone);
   context.nome = message;
   setContext(phone, context);
   setState(phone, 'solicitando_email');
@@ -456,7 +648,16 @@ function handleInicio(phone, message) {
     );
   }
 
-  if (messageLower.includes('oi') || messageLower.includes('olá') || messageLower.includes('ola') || messageLower.includes('bom dia') || messageLower.includes('boa tarde') || messageLower.includes('boa noite')) {
+  if (
+    messageLower === 'menu' ||
+    messageLower.includes('menu') ||
+    messageLower.includes('oi') ||
+    messageLower.includes('olá') ||
+    messageLower.includes('ola') ||
+    messageLower.includes('bom dia') ||
+    messageLower.includes('boa tarde') ||
+    messageLower.includes('boa noite')
+  ) {
     setState(phone, 'menu_principal');
 
     const resposta = (
@@ -532,32 +733,26 @@ function handleMenuPrincipal(phone, message) {
       );
 
     case '3':
-      setState(phone, 'aguardando_cpf');
+      setState(phone, 'aguardando_nome');
       setContext(phone, { acao: 'lista_espera' });
       return (
         "⏳ *Lista de Espera*\n\n" +
-        "Por favor, digite seu CPF para adicionar à lista de espera:\n\n" +
+        "Por favor, digite seu *nome completo* para adicionar à lista de espera:\n\n" +
         "Digite *voltar* para retornar ao menu principal."
       );
 
     case '4':
       const isBusinessHours = verificarHorarioAtendimento();
-      
-      if (isBusinessHours) {
-        setUserState(phone, "aguardando_atendimento_secretaria");
-        return "👩‍💼 Seu atendimento foi direcionado para a secretária. Por favor, aguarde.";
-      } else {
-        setUserState(phone, "finalizado");
-        return (
-          "🕐 *A clínica está fora do horário de atendimento.*\n\n" +
-          "📅 *Horário de Atendimento:*\n" +
-          "Segunda a Sexta, das 8h às 18h\n" +
-          "Sábado, das 8h às 12h\n\n" +
-          "📧 contato@clinicanassif.com.br\n" +
-          "📞 +55 31 98600-3666\n\n" +
-          "Entraremos em contato assim que o atendimento for retomado."
-        );
-      }
+      // Pede o nome antes de abrir ticket, para organizar no painel
+      setContext(phone, { acao: 'secretaria', foraHorario: !isBusinessHours });
+      setState(phone, 'aguardando_nome');
+      return (
+        "👩‍💼 *Atendimento com a Secretária*\n\n" +
+        "Por favor, digite seu *nome completo* para direcionarmos seu atendimento.\n\n" +
+        (isBusinessHours
+          ? "Assim que recebermos seu nome, a secretária dará continuidade ao atendimento.\n\nDigite *voltar* para retornar ao menu."
+          : "Estamos fora do horário de atendimento, mas vamos registrar seu pedido e a secretária entrará em contato assim que possível.\n\nDigite *voltar* para retornar ao menu.")
+      );
 
     case '0':
       setState(phone, 'inicio');
@@ -586,6 +781,7 @@ async function handleAguardandoCpf(phone, message) {
 
   if (messageLower === 'voltar') {
     setState(phone, 'menu_principal');
+    createSecretaryTicket({ phone, motivo: 'Usuário pediu atendimento humano' });
     return handleMenuPrincipal(phone, 'menu');
   }
 
@@ -593,6 +789,8 @@ async function handleAguardandoCpf(phone, message) {
     const context = getContext(phone);
     context.cpf = message;
     setContext(phone, context);
+    // Persist paciente
+    upsertPatient({ cpf: message, name: context.nome, phone, email: context.email });
 
     // Busca o paciente usando o gestaodsService
     const token = process.env.GESTAODS_TOKEN;
@@ -626,6 +824,8 @@ async function handleAguardandoCpf(phone, message) {
     context.pacienteEncontrado = true;
     context.dadosPaciente = paciente; // Salva os dados completos da API
     setContext(phone, context);
+    // Persist paciente com dados completos
+    upsertPatient({ cpf: message, name: nome, phone, email });
 
     setState(phone, 'confirmando_paciente');
 
@@ -860,7 +1060,7 @@ async function handleConfirmandoCadastro(phone, message) {
           "Uma secretária irá ajudá-lo com o cadastro.\n\n" +
           "👩‍💼 *Secretária*\n\n" +
           "☎️ Telefone: +55 31 98600-3666\n" +
-          "📧 Email: contato@clinicanassif.com.br\n" +
+          "📧 Email: contato@gabrielanassif.com\n" +
           "🕐 Horário: Segunda a Sexta, 8h às 18h\n\n" +
           "Digite *1* para voltar ao menu principal."
         );
@@ -994,6 +1194,19 @@ async function handleConfirmandoPaciente(phone, message) {
 
         case 'lista_espera':
           setState(phone, 'lista_espera_confirmada');
+          // cria entrada na waitlist
+          try {
+            const ctx = getContext(phone);
+            await createWaitlistEntry({
+              cpf: ctx.cpf,
+              name: ctx.nome,
+              phone,
+              email: ctx.email,
+              motivo: 'Lista de espera via chatbot',
+              prioridade: 'media'
+            });
+            await createNotification({ type: 'espera', title: 'Novo na lista de espera', message: `Telefone ${phone}` });
+          } catch {}
           return (
             "⏳ *Lista de Espera*\n\n" +
             "✅ Adicionado à lista de espera!\n" +
@@ -1035,7 +1248,7 @@ function handleAtendimentoHumano(phone, message) {
     return (
       "👩‍💼 *Secretária*\n\n" +
       "☎️ Telefone: +55 31 98600-3666\n" +
-      "📧 Email: contato@clinicanassif.com.br\n" +
+      "📧 Email: contato@gabrielanassif.com\n" +
       "🕐 Horário: Segunda a Sexta, 8h às 18h\n\n" +
       "Digite *1* para voltar ao menu principal."
     );
@@ -1073,27 +1286,36 @@ async function handleConfirmandoAgendamento(phone, message) {
         console.log("[FlowController] Payload preparado:", JSON.stringify(payload, null, 2));
         console.log("[FlowController] Verificação: data_fim_agendamento deve ser 20 minutos após data_agendamento");
 
-        // Chamada para a API
-        const resposta = await gestaodsService.agendarConsulta(payload);
+        // Chamada para a API (lança erro se falhar)
+        await gestaodsService.agendarConsulta(payload);
 
-        if (resposta?.status === 200 || resposta?.status === 201) {
-          console.log("[FlowController] Consulta agendada com sucesso:", resposta.data);
+        // Registrar aprovação automática na dashboard (opção B)
+        await insertAppointmentRequest({
+          cpf: context.cpf,
+          phone,
+          requested_date: context.dataSelecionada,
+          requested_time: context.horaSelecionada,
+          tipo: context.tipo_consulta,
+          status: 'approved'
+        });
+        await createNotification({
+          type: 'agendamento',
+          title: 'Agendamento confirmado',
+          message: `CPF ${context.cpf} agendado para ${context.dataSelecionada} às ${context.horaSelecionada}`
+        });
 
-          // Se chegou até aqui, o agendamento foi bem-sucedido
-          setState(phone, 'agendamento_confirmado');
+        setState(phone, 'agendamento_confirmado');
 
-          return (
-            "✅ *Agendamento realizado com sucesso!*\n\n" +
-            `📅 Data: ${context.dataSelecionada}\n` +
-            `⏰ Horário: ${context.horaSelecionada}\n` +
-            `📌 Tipo: ${context.tipo_consulta}\n\n` +
-            "A clínica agradece seu contato. 👩‍⚕️🩺\n" +
-            "Se precisar de algo mais, digite *menu* a qualquer momento."
-          );
-        } else {
-          console.error("[GestãoDS] Erro ao agendar consulta:", resposta?.data || resposta);
-          throw new Error("Erro ao agendar a consulta.");
-        }
+        const outMsg = (
+          "✅ *Agendamento realizado com sucesso!*\n\n" +
+          `📅 Data: ${context.dataSelecionada}\n` +
+          `⏰ Horário: ${context.horaSelecionada}\n` +
+          `📌 Tipo: ${context.tipo_consulta}\n\n` +
+          "A clínica agradece seu contato. 👩‍⚕️🩺\n" +
+          "Se precisar de algo mais, digite *menu* a qualquer momento."
+        );
+        try { await logMessageToSupabase(phone, 'out', outMsg); } catch {}
+        return outMsg;
 
       } catch (erro) {
         console.error("❌ Erro ao agendar consulta:", erro.message);
@@ -1114,7 +1336,8 @@ async function handleConfirmandoAgendamento(phone, message) {
     case 'cancelar':
       setState(phone, 'menu_principal');
       setContext(phone, {});
-      return (
+      createNotification({ type: 'agendamento', title: 'Agendamento cancelado', message: `Usuário ${phone} cancelou etapa de confirmação.` });
+      const outMsg = (
         "❌ Agendamento cancelado.\n\n" +
         "Voltando ao menu principal...\n\n" +
         "Digite *1* para agendar uma consulta\n" +
@@ -1122,6 +1345,8 @@ async function handleConfirmandoAgendamento(phone, message) {
         "Digite *3* para lista de espera\n" +
         "Digite *4* para falar com secretária"
       );
+      try { await logMessageToSupabase(phone, 'out', outMsg); } catch {}
+      return outMsg;
 
     default:
       return (
@@ -1259,7 +1484,16 @@ async function handleEscolhendoHorario(phone, message) {
 function handleEstadoFinal(phone, message) {
   const messageLower = message.toLowerCase().trim();
 
-  if (messageLower === 'menu') {
+  if (
+    messageLower === 'menu' ||
+    messageLower.includes('menu') ||
+    messageLower.includes('oi') ||
+    messageLower.includes('olá') ||
+    messageLower.includes('ola') ||
+    messageLower.includes('bom dia') ||
+    messageLower.includes('boa tarde') ||
+    messageLower.includes('boa noite')
+  ) {
     // Vai para o menu principal e exibe as opções
     setState(phone, 'menu_principal');
     setContext(phone, {});
@@ -1279,8 +1513,27 @@ function handleEstadoFinal(phone, message) {
 async function flowController(message, phone) {
   const state = getState(phone);
   console.log(`🧠 Processando mensagem do usuário ${phone} no estado: ${state}`);
+  try { await logMessageToSupabase(phone, 'in', message); } catch {}
 
   try {
+    // Interceptação global para saudações ou "menu" em qualquer estado
+    const messageLowerGlobal = message.toLowerCase().trim();
+    const isGreetingGlobal = (
+      messageLowerGlobal.includes('oi') ||
+      messageLowerGlobal.includes('olá') ||
+      messageLowerGlobal.includes('ola') ||
+      messageLowerGlobal.includes('bom dia') ||
+      messageLowerGlobal.includes('boa tarde') ||
+      messageLowerGlobal.includes('boa noite')
+    );
+    if (messageLowerGlobal === 'menu' || messageLowerGlobal.includes('menu') || isGreetingGlobal) {
+      setState(phone, 'menu_principal');
+      setContext(phone, {});
+      delete agendamentosPendentes[phone];
+      delete agendamentoSelecionado[phone];
+      return handleMenuPrincipal(phone, 'menu');
+    }
+
     // Tratamento direto dos estados de reagendamento
     const context = getContext(phone);
 
@@ -1350,13 +1603,19 @@ async function flowController(message, phone) {
         context.estado = null;
         setState(phone, 'agendamento_confirmado');
         setContext(phone, context);
-
+        // registrar solicitação de reagendamento aprovada
+        try {
+          await insertRescheduleRequest({ phone, requested_date: context.nova_data, requested_time: hora, status: 'approved' });
+          await createNotification({ type: 'reagendamento', title: 'Reagendamento confirmado', message: `Novo: ${context.nova_data} ${hora}` });
+        } catch {}
         return `✅ Consulta reagendada com sucesso para *${novaDataHora}*!`;
       } catch (error) {
         console.error("Erro ao reagendar:", error.response?.data || error.message);
         context.estado = null;
         setState(phone, 'inicio');
         setContext(phone, context);
+        // registra pedido pendente
+        try { await insertRescheduleRequest({ phone, requested_date: context.nova_data, requested_time: hora, status: 'pending' }); } catch {}
         return "❌ Erro ao reagendar. Tente novamente mais tarde.";
       }
     }
@@ -1384,7 +1643,7 @@ async function flowController(message, phone) {
           "Uma secretária irá ajudá-lo com o cadastro.\n\n" +
           "👩‍💼 *Secretária*\n\n" +
           "☎️ Telefone: +55 31 98600-3666\n" +
-          "📧 Email: contato@clinicanassif.com.br\n" +
+          "📧 Email: contato@gabrielanassif.com\n" +
           "🕐 Horário: Segunda a Sexta, 8h às 18h\n\n" +
           "Digite *1* para voltar ao menu principal."
         );
@@ -1417,7 +1676,7 @@ async function flowController(message, phone) {
         return await handleAguardandoCpf(phone, message);
 
       case 'aguardando_nome':
-        return handleAguardandoNome(phone, message);
+        return await handleAguardandoNome(phone, message);
 
       case 'solicitando_dados':
         return handleSolicitandoDados(phone, message);
@@ -1632,10 +1891,14 @@ async function decidirAcaoAgendamento(message, context, phone) {
   }
 
   if (message === '2') {
+    try {
+      await insertCancelRequest({ phone, motivo: 'Solicitado via chatbot', status: 'pending' });
+      await createNotification({ type: 'cancelamento', title: 'Solicitação de cancelamento', message: `Telefone ${phone}` });
+    } catch {}
+    setState(phone, 'finalizado');
     return (
-      "❌ Cancelamento ainda não implementado na API.\n\n" +
-      "Por favor, entre em contato com a recepção:\n" +
-      "☎️ Telefone: +55 31 98600-3666\n\n" +
+      "❌ Cancelamento solicitado.\n\n" +
+      "Uma secretária entrará em contato em breve.\n\n" +
       "Digite *menu* para voltar ao início."
     );
   }
@@ -1728,15 +1991,46 @@ async function handleAguardandoAcaoAgendamento(phone, message) {
   }
 
   if (message === '1') {
+    try {
+      const currentDateTime = agendamento?.data || agendamento?.raw?.data_agendamento || agendamento?.raw?.data || null;
+      const tokenAgendamento = agendamento?.token || agendamento?.raw?.token || agendamento?.raw?.agendamento || null;
+      await insertRescheduleRequest({
+        phone,
+        current_datetime: currentDateTime,
+        token_agendamento: tokenAgendamento,
+        status: 'pending'
+      });
+      await createNotification({
+        type: 'reagendamento',
+        title: 'Solicitação de reagendamento',
+        message: `Telefone ${phone} - Pedido de reagendamento para ${currentDateTime || 'agendamento selecionado'}`
+      });
+    } catch (e) {}
+
     await salvarEstado(phone, 'finalizado');
     setState(phone, 'finalizado');
-    return `📅 Reagendamento solicitado para o agendamento de *${agendamento.data}*. Uma secretária entrará em contato.`;
+    return `📅 Solicitação de reagendamento registrada. Uma secretária entrará em contato para definir a nova data.`;
   }
 
   if (message === '2') {
+    try {
+      const tokenAgendamento = agendamento?.token || agendamento?.raw?.token || agendamento?.raw?.agendamento || null;
+      await insertCancelRequest({
+        phone,
+        agendamento_token: tokenAgendamento,
+        motivo: 'Solicitado via chatbot',
+        status: 'pending'
+      });
+      await createNotification({
+        type: 'cancelamento',
+        title: 'Solicitação de cancelamento',
+        message: `Telefone ${phone} - Pedido de cancelamento registrado`
+      });
+    } catch (e) {}
+
     await salvarEstado(phone, 'finalizado');
     setState(phone, 'finalizado');
-    return `❌ Cancelamento solicitado para o agendamento de *${agendamento.data}*. Uma secretária entrará em contato.`;
+    return `❌ Solicitação de cancelamento registrada. Em breve a secretária entrará em contato.`;
   }
 
   return 'Digite *1* para Reagendar ou *2* para Cancelar.';
@@ -1747,11 +2041,42 @@ async function handleOpcaoReagendarCancelar(phone, message) {
   const context = getContext(phone);
   
   if (message === '1') {
-    setState(phone, 'reagendar_em_andamento');
-    return '🔄 Ok! Vamos iniciar o processo para *reagendar* essa consulta. Aguarde...';
+    try {
+      const ag = context.agendamentoSelecionado || {};
+      const currentDateTime = ag.data_agendamento || ag.data || ag.current_datetime || null;
+      const tokenAgendamento = ag.token || ag.agendamento || ag.token_agendamento || null;
+      await insertRescheduleRequest({
+        phone,
+        current_datetime: currentDateTime,
+        token_agendamento: tokenAgendamento,
+        status: 'pending'
+      });
+      await createNotification({
+        type: 'reagendamento',
+        title: 'Solicitação de reagendamento',
+        message: `Telefone ${phone} - Pedido de reagendamento para ${currentDateTime || 'agendamento selecionado'}`
+      });
+    } catch (e) {}
+    setState(phone, 'finalizado');
+    return '📅 Solicitação de reagendamento registrada no painel. Em breve a secretária entrará em contato.';
   } else if (message === '2') {
-    setState(phone, 'cancelar_em_andamento');
-    return '🗑️ Ok! Vamos cancelar sua consulta. Aguarde...';
+    try {
+      const ag = context.agendamentoSelecionado || {};
+      const tokenAgendamento = ag.token || ag.agendamento || ag.token_agendamento || null;
+      await insertCancelRequest({
+        phone,
+        agendamento_token: tokenAgendamento,
+        motivo: 'Solicitado via chatbot',
+        status: 'pending'
+      });
+      await createNotification({
+        type: 'cancelamento',
+        title: 'Solicitação de cancelamento',
+        message: `Telefone ${phone} - Pedido de cancelamento registrado`
+      });
+    } catch (e) {}
+    setState(phone, 'finalizado');
+    return '❌ Solicitação de cancelamento registrada no painel. Em breve a secretária entrará em contato.';
   } else if (message === '3') {
     setState(phone, 'menu_principal');
     delete context.agendamentoSelecionado;

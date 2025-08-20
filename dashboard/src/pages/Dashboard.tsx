@@ -13,12 +13,14 @@ interface Estatisticas {
 }
 
 interface Notificacao {
-  id: number;
+  id: string | number;
   type: string;
   title: string;
   message: string;
-  timestamp: Date;
+  timestamp: Date | string;
   priority?: 'normal' | 'high';
+  name?: string;
+  phone?: string;
 }
 
 export default function Dashboard() {
@@ -47,46 +49,65 @@ export default function Dashboard() {
       setLoading(true);
       const dados = await dashboardService.getEstatisticas();
       setEstatisticas(dados.estatisticas || estatisticas);
-      setNotificacoes(dados.notificacoes || []);
+
+      const normalize = (n: any): Notificacao => {
+        // Extrair telefone e nome do campo message quando possível
+        const message: string = n?.message || '';
+        // Telefone: pega números com 10-14 dígitos (com possível +55)
+        // Evita confundir CPF como telefone
+        const cpfNear = /cpf\s*[\d\.\-]{11,14}/i.test(message);
+        let phoneMatch = message.match(/(?:telefone|whatsapp|phone)\D*(\+?\d{10,14})/i);
+        let phone = n?.phone || (phoneMatch ? phoneMatch[1] : undefined);
+        if (!phone && !cpfNear) {
+          const generic = message.match(/\+?\d{12,14}|55\d{10,12}/);
+          phone = generic ? generic[0] : undefined;
+        }
+
+        // Nome: heurística comum "Telefone <fone> - <nome>" ou " - <nome>"
+        let name: string | undefined = n?.name;
+        if (!name && phone) {
+          const idx = message.indexOf(phone);
+          if (idx >= 0) {
+            const after = message.slice(idx + String(phone).length);
+            const dashIdx = after.indexOf('-');
+            if (dashIdx >= 0) {
+              const raw = after.slice(dashIdx + 1).trim();
+              name = raw && raw.length > 0 ? raw : undefined;
+            }
+          }
+        }
+
+        return {
+          id: n?.id,
+          type: n?.type || 'geral',
+          title: n?.title || 'Notificação',
+          message,
+          priority: (n?.priority === 'high' ? 'high' : 'normal'),
+          timestamp: n?.timestamp || n?.created_at || new Date().toISOString(),
+          name,
+          phone
+        } as Notificacao;
+      };
+
+      const normalizadas: Notificacao[] = Array.isArray(dados?.notificacoes)
+        ? dados.notificacoes.map(normalize)
+        : [];
+
+      setNotificacoes(normalizadas);
       setError(null);
     } catch (err) {
       console.error('Erro ao carregar dados:', err);
       setError('Erro ao carregar dados da dashboard');
-      // Dados mock para demonstração
+      // Não usar mocks: manter zerado e sem notificações
       setEstatisticas({
-        agendamentosPendentes: 3,
-        reagendamentos: 2,
-        cancelamentos: 1,
-        atendimentosManuais: 1,
-        interacoesHoje: 45,
-        pacientesAguardando: 5
+        agendamentosPendentes: 0,
+        reagendamentos: 0,
+        cancelamentos: 0,
+        atendimentosManuais: 0,
+        interacoesHoje: 0,
+        pacientesAguardando: 0
       });
-      setNotificacoes([
-        {
-          id: 1,
-          type: 'paciente',
-          title: 'Novo paciente',
-          message: 'João Silva cadastrado',
-          timestamp: new Date(Date.now() - 5 * 60 * 1000),
-          priority: 'normal'
-        },
-        {
-          id: 2,
-          type: 'agendamento',
-          title: 'Agendamento confirmado',
-          message: 'Ana Lima - 10:00',
-          timestamp: new Date(Date.now() - 15 * 60 * 1000),
-          priority: 'normal'
-        },
-        // {
-        //   id: 3,
-        //   type: 'secretaria',
-        //   title: 'Atendimento manual',
-        //   message: '+55 31 91234-5678',
-        //   timestamp: new Date(Date.now() - 30 * 60 * 1000),
-        //   priority: 'high'
-        // }
-      ]);
+      setNotificacoes([]);
     } finally {
       setLoading(false);
     }

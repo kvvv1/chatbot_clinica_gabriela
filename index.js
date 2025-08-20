@@ -1,16 +1,34 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const cors = require('cors');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const { flowController } = require('./services/flowController');
 const zapiService = require('./services/zapiService');
+const { supabase } = require('./services/supabaseClient');
+const LOG_MESSAGES = process.env.LOG_MESSAGES || 'key';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
+// CORS: permite configurar via env para produção
+const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173,http://127.0.0.1:5173')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+app.use(cors({ origin: allowedOrigins, methods: ['GET','POST','PUT','DELETE','OPTIONS'] }));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+// Rate limit para o webhook (proteção básica)
+const webhookLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 min
+  max: 120,            // 120 req/min por IP
+  standardHeaders: true,
+  legacyHeaders: false
+});
 
 // Rota de teste
 app.get('/', (req, res) => {
@@ -21,8 +39,14 @@ app.get('/', (req, res) => {
   });
 });
 
+// ------------------------------
+// API da Dashboard (/api/painel)
+// ------------------------------
+const painelRouter = require('./routes/painel');
+app.use('/api/painel', painelRouter);
+
 // Rota de webhook para receber mensagens do Z-API
-app.post('/webhook', async (req, res) => {
+app.post('/webhook', webhookLimiter, async (req, res) => {
   try {
     console.log('📨 Mensagem recebida:', JSON.stringify(req.body, null, 2));
     
@@ -46,6 +70,16 @@ app.post('/webhook', async (req, res) => {
     const userMessage = typeof userMessageRaw === 'string' ? userMessageRaw.trim() : '';
 
     console.log('🔍 Dados extraídos:', { userPhone, userMessage });
+    // Log entrada (somente se habilitado)
+    if (LOG_MESSAGES === 'all') {
+      try {
+        if (supabase && userPhone && userMessage) {
+          await supabase.from('messages').insert({ phone: userPhone, direction: 'in', content: userMessage });
+        }
+      } catch (e) {
+        console.warn('[Supabase] Falha ao logar mensagem de entrada:', e.message);
+      }
+    }
 
     // 🔒 Verifica se é mensagem do próprio bot (evita loop infinito)
     if (data.fromMe === true) {
@@ -61,13 +95,52 @@ app.post('/webhook', async (req, res) => {
 
     console.log(`🧠 Processando mensagem do usuário ${userPhone}: "${userMessage}"`);
 
+    // Se houver atendimento humano pendente ou em andamento, não responder para evitar conflito
+    try {
+      if (supabase && userPhone) {
+        const { data: tickets, error: ticketsErr } = await supabase
+          .from('secretary_tickets')
+          .select('status')
+          .eq('phone', userPhone)
+          .in('status', ['pendente', 'em_atendimento'])
+          .order('created_at', { ascending: false })
+          .limit(1);
+        if (ticketsErr) {
+          console.warn('[Supabase] Falha ao consultar tickets para silenciar bot:', ticketsErr.message);
+        }
+        if (Array.isArray(tickets) && tickets.length > 0) {
+          console.log('🧑‍💼 Atendimento humano ativo/pendente. Bot silenciado para este telefone.');
+          return res.status(200).send('Aguardando atendimento humano');
+        }
+      }
+    } catch (e) {
+      console.warn('[Silence-Check] Erro ao verificar atendimento humano:', e.message);
+    }
+
     // Processa o fluxo da conversa usando o flowController
     const resposta = await flowController(userMessage, userPhone);
+
+    // Se o fluxo decidir não responder (null/undefined/empty), não enviar mensagem
+    if (!resposta) {
+      console.log('🤫 Fluxo retornou vazio. Nenhuma resposta será enviada.');
+      return res.status(200).send('ok');
+    }
 
     console.log(`📤 Enviando resposta para ${userPhone}:`, resposta);
 
     // Envia a resposta via Z-API
     await zapiService.sendMessage(userPhone, resposta);
+
+    // Log saída (somente se habilitado)
+    if (LOG_MESSAGES === 'all') {
+      try {
+        if (supabase && userPhone && resposta) {
+          await supabase.from('messages').insert({ phone: userPhone, direction: 'out', content: resposta });
+        }
+      } catch (e) {
+        console.warn('[Supabase] Falha ao logar mensagem de saída:', e.message);
+      }
+    }
 
     res.status(200).send('Mensagem processada com sucesso');
   } catch (error) {

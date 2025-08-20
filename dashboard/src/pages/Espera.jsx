@@ -31,47 +31,12 @@ export default function Espera() {
     try {
       setLoading(true);
       const dados = await dashboardService.getListaEspera();
-      setListaEspera(dados || []);
+      setListaEspera(Array.isArray(dados) ? dados : []);
       setError(null);
     } catch (err) {
       console.error('Erro ao carregar lista de espera:', err);
       setError('Erro ao carregar lista de espera');
-      // Dados mock
-      setListaEspera([
-        {
-          id: 1,
-          paciente: 'Fernanda Lima',
-          telefone: '+55 31 91234-5678',
-          email: 'fernanda.lima@email.com',
-          dataSolicitacao: '2024-01-10',
-          prioridade: 'alta',
-          tempoEspera: 8,
-          motivo: 'Consulta de rotina',
-          observacoes: 'Paciente solicita horário da manhã'
-        },
-        {
-          id: 2,
-          paciente: 'João Silva',
-          telefone: '+55 31 98765-4321',
-          email: 'joao.silva@email.com',
-          dataSolicitacao: '2024-01-12',
-          prioridade: 'media',
-          tempoEspera: 6,
-          motivo: 'Retorno',
-          observacoes: 'Precisa de horário específico'
-        },
-        {
-          id: 3,
-          paciente: 'Maria Santos',
-          telefone: '+55 31 94567-8901',
-          email: 'maria.santos@email.com',
-          dataSolicitacao: '2024-01-15',
-          prioridade: 'baixa',
-          tempoEspera: 3,
-          motivo: 'Primeira consulta',
-          observacoes: 'Sem restrições de horário'
-        }
-      ]);
+      setListaEspera([]);
     } finally {
       setLoading(false);
     }
@@ -88,20 +53,10 @@ export default function Espera() {
   const selecionarPrioridade = async (itemId, novaPrioridade) => {
     try {
       setActionLoading(prev => ({ ...prev, [`prioridade_${itemId}`]: true }));
-      
-      // Simular chamada à API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Atualizar estado local
-      setListaEspera(prev => prev.map(item => 
-        item.id === itemId 
-          ? { ...item, prioridade: novaPrioridade }
-          : item
-      ));
-      
-      console.log(`Prioridade do item ${itemId} alterada para: ${novaPrioridade}`);
-      
-      // Feedback visual
+      await dashboardService.updateWaitlistPriority(itemId, novaPrioridade);
+      setListaEspera(prev => prev.map(item => (
+        item.id === itemId ? { ...item, prioridade: novaPrioridade } : item
+      )));
       const prioridadeText = novaPrioridade.charAt(0).toUpperCase() + novaPrioridade.slice(1);
       alert(`Prioridade alterada para: ${prioridadeText}`);
     } catch (error) {
@@ -228,14 +183,8 @@ export default function Espera() {
 
     try {
       setActionLoading(prev => ({ ...prev, [`remover_${espera.id}`]: true }));
-      
-      // Simular chamada à API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Remover da lista de espera
+      await dashboardService.removeWaitlist(espera.id);
       setListaEspera(prev => prev.filter(item => item.id !== espera.id));
-      
-      console.log(`Paciente ${espera.paciente} removido da lista de espera`);
       alert(`Paciente ${espera.paciente} removido da lista de espera!`);
     } catch (error) {
       console.error('Erro ao remover:', error);
@@ -272,11 +221,19 @@ export default function Espera() {
 
       <div className="espera-list">
         {listaEspera.length > 0 ? (
-          listaEspera.map((item) => (
+          [...listaEspera]
+            .sort((a, b) => {
+              // ordem por data de solicitação ascendente (primeiro adicionado vem primeiro)
+              const da = new Date(a.dataSolicitacao || 0).getTime();
+              const db = new Date(b.dataSolicitacao || 0).getTime();
+              return da - db;
+            })
+            .map((item, index) => (
             <div key={item.id} className="lista-espera-card">
               {/* Coluna Esquerda - Dados do Paciente */}
               <div className="paciente-info-espera">
                 <div className="paciente-nome">
+                  <span className="rank-badge">#{index + 1}</span>
                   <h3>👤 {item.paciente}</h3>
                 </div>
                 
@@ -292,13 +249,10 @@ export default function Espera() {
 
               {/* Coluna Direita - Status da Espera */}
               <div className="status-espera">
-                <div className="status-principal">
-                  <h4>📋 LISTA DE ESPERA</h4>
-                </div>
                 
                 <div className="status-detalhes">
-                  <p>⏰ Tempo de espera: Há {item.tempoEspera} dias</p>
-                  <h4>🎯 Prioridade</h4>
+                  <p className="tempo-espera">⏰ Tempo de espera: Há {item.tempoEspera} dias</p>
+                  <h4>Prioridade:</h4>
                   <div className="prioridade-select">
                     <button 
                       className="prioridade-trigger"
@@ -348,32 +302,9 @@ export default function Espera() {
                 >
                   {actionLoading[`whatsapp_${item.id}`] ? '⏳' : '💬'} WhatsApp
                 </button>
-                <button 
-                  className="btn-ligar"
-                  onClick={() => handleLigar(item)}
-                  disabled={actionLoading[`ligar_${item.id}`]}
-                >
-                  {actionLoading[`ligar_${item.id}`] ? '⏳' : '📞'} Ligar
-                </button>
               </div>
 
-              {/* Ações - Linha 2: Gerenciamento */}
-              <div className="acoes-gerenciamento">
-                <button 
-                  className="btn-email"
-                  onClick={() => handleEmail(item)}
-                  disabled={actionLoading[`email_${item.id}`]}
-                >
-                  {actionLoading[`email_${item.id}`] ? '⏳' : '📧'} Email
-                </button>
-                <button 
-                  className="btn-detalhes"
-                  onClick={() => handleDetalhes(item)}
-                  disabled={actionLoading[`detalhes_${item.id}`]}
-                >
-                  {actionLoading[`detalhes_${item.id}`] ? '⏳' : '📋'} Detalhes
-                </button>
-              </div>
+              {/* Ações - Linha 2: (removidas para melhorar espaçamento) */}
 
               {/* Ações - Coluna Direita: Principais */}
               <div className="acoes-principais">

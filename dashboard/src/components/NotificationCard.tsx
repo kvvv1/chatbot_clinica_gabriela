@@ -1,10 +1,13 @@
+import './NotificationCard.css';
 interface Notification {
-  id: number;
+  id: string | number;
   type: string;
   title: string;
   message: string;
   timestamp: Date | string;
   priority?: 'normal' | 'high';
+  name?: string;
+  phone?: string;
 }
 
 interface NotificationCardProps {
@@ -13,15 +16,21 @@ interface NotificationCardProps {
 
 export default function NotificationCard({ notification }: NotificationCardProps) {
   const formatTimestamp = (timestamp: Date | string) => {
+    const date = new Date(timestamp);
+    if (isNaN(date.getTime())) {
+      return 'há pouco';
+    }
     const now = new Date();
-    const diff = now.getTime() - new Date(timestamp).getTime();
-    const minutes = Math.floor(diff / (1000 * 60));
-    
+    const diffMs = now.getTime() - date.getTime();
+    if (diffMs < 0) return 'agora';
+    const minutes = Math.floor(diffMs / (1000 * 60));
     if (minutes < 1) return 'agora';
     if (minutes === 1) return '1 min atrás';
     if (minutes < 60) return `${minutes} min atrás`;
-    if (minutes < 1440) return `${Math.floor(minutes / 60)}h atrás`;
-    return `${Math.floor(minutes / 1440)}d atrás`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours} h atrás`;
+    const days = Math.floor(hours / 24);
+    return `${days} d atrás`;
   };
 
   const getTypeIcon = (type: string) => {
@@ -41,6 +50,8 @@ export default function NotificationCard({ notification }: NotificationCardProps
     }
   };
 
+  const phoneIcon = notification.type === 'agendamento' ? '🆔' : '📞';
+
   const getTypeColor = (type: string) => {
     switch (type) {
       case 'paciente':
@@ -59,36 +70,22 @@ export default function NotificationCard({ notification }: NotificationCardProps
   };
 
   // Função para truncar texto muito longo
-  const truncateText = (text: string, maxLength: number = 50) => {
+  const truncateText = (text: string, maxLength: number = 80) => {
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';
   };
 
   const isHighPriority = notification?.priority === 'high';
 
+  const isWaitlist = notification.type === 'espera' || notification.type === 'waitlist';
+
   return (
-    <div 
+    <div
       className={`notification-card ${notification.type}`}
       data-priority={notification.priority || 'normal'}
       style={{
-        backgroundColor: '#ffffff',
-        border: '1px solid #e5e7eb',
-        borderRadius: '8px',
-        padding: '18px',
-        marginBottom: '16px',
-        borderLeft: `4px solid ${getTypeColor(notification.type)}`,
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-        transition: 'all 0.2s ease',
-        cursor: 'pointer',
-        position: 'relative'
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
-        e.currentTarget.style.transform = 'translateY(-1px)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)';
-        e.currentTarget.style.transform = 'translateY(0)';
+        borderLeftColor: getTypeColor(notification.type),
+        overflow: 'hidden'
       }}
     >
       {isHighPriority && (
@@ -112,57 +109,41 @@ export default function NotificationCard({ notification }: NotificationCardProps
         </span>
       )}
       
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
-        <div 
-          style={{
-            fontSize: '20px',
-            marginTop: '2px',
-            flexShrink: 0
-          }}
-        >
-          {getTypeIcon(notification.type)}
-        </div>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', width: '100%' }}>
+        <div className="notification-icon">{getTypeIcon(notification.type)}</div>
         
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <h4 
-            style={{
+        <div className="notification-content">
+          <h4>{notification.title}</h4>
+          {(notification.name || notification.phone) && (
+            <div style={{
               margin: '0 0 6px 0',
-              fontSize: '14px',
-              fontWeight: '600',
-              color: '#1f2937',
-              lineHeight: '1.4',
-              maxWidth: '100%'
-            }}
-          >
-            {notification.title}
-          </h4>
-          
-          <p 
-            style={{
-              margin: '0 0 8px 0',
-              fontSize: '13px',
-              color: '#6b7280',
-              lineHeight: '1.5',
-              wordBreak: 'break-word',
-              maxWidth: '100%'
-            }}
-            title={notification.message}
-          >
-            {truncateText(notification.message)}
-          </p>
-          
-          <div 
-            style={{
+              fontSize: '12px',
+              color: '#374151',
               display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              color: '#9ca3af',
-              fontSize: '12px'
-            }}
-          >
-            <span>⏰</span>
-            <span>{formatTimestamp(notification.timestamp)}</span>
-          </div>
+              gap: '8px',
+              flexWrap: 'wrap'
+            }}>
+              {notification.name && (
+                <span style={{ fontWeight: 500 }}>👤 {notification.name}</span>
+              )}
+              {notification.phone && /\D*(?:\+?\d{10,14})$/.test(String(notification.phone)) ? (
+                <span style={{ color: '#6b7280' }}>{phoneIcon} {notification.phone}</span>
+              ) : null}
+            </div>
+          )}
+          
+          {(() => {
+            const msg = (notification.message || '').toString();
+            const hasNameOrPhone = !!(notification.name || notification.phone);
+            const msgLower = msg.toLowerCase();
+            const containsTelefone = msgLower.startsWith('telefone') || msgLower.includes('telefone');
+            const containsPhoneDigits = notification.phone ? msg.includes(String(notification.phone)) : false;
+            const shouldShowMessage = msg.length > 0 && !isWaitlist && !(hasNameOrPhone && (containsTelefone || containsPhoneDigits));
+            if (!shouldShowMessage) return null;
+            return <p title={msg}>{truncateText(msg)}</p>;
+          })()}
+          
+          <div className="notification-time">{formatTimestamp(notification.timestamp)}</div>
         </div>
       </div>
     </div>

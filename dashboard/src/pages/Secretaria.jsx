@@ -5,6 +5,7 @@ import './Secretaria.css';
 
 export default function Secretaria() {
   const [solicitacoes, setSolicitacoes] = useState([]);
+  const [filtro, setFiltro] = useState('pendente'); // pendente | em_atendimento | finalizado | todos
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
@@ -20,44 +21,12 @@ export default function Secretaria() {
     try {
       setLoading(true);
       const dados = await dashboardService.getSecretaria();
-      setSolicitacoes(dados || []);
+      setSolicitacoes(Array.isArray(dados) ? dados : []);
       setError(null);
     } catch (err) {
       console.error('Erro ao carregar solicitações:', err);
       setError('Erro ao carregar solicitações');
-      // Dados mock
-      setSolicitacoes([
-        {
-          id: 1,
-          paciente: 'Roberto Santos',
-          telefone: '+55 31 91234-5678',
-          email: 'roberto.santos@email.com',
-          dataSolicitacao: '2024-01-15T10:30:00',
-          status: 'pendente',
-          motivo: 'Dúvida sobre horário de atendimento',
-          observacoes: 'Paciente quer confirmar se a clínica funciona aos sábados'
-        },
-        {
-          id: 2,
-          paciente: 'Ana Paula Costa',
-          telefone: '+55 31 98765-4321',
-          email: 'ana.costa@email.com',
-          dataSolicitacao: '2024-01-15T11:15:00',
-          status: 'pendente',
-          motivo: 'Solicitação de documentos',
-          observacoes: 'Precisa de atestado médico para o trabalho'
-        },
-        {
-          id: 3,
-          paciente: 'Carlos Eduardo Silva',
-          telefone: '+55 31 94567-8901',
-          email: 'carlos.silva@email.com',
-          dataSolicitacao: '2024-01-15T14:20:00',
-          status: 'pendente',
-          motivo: 'Reagendamento de consulta',
-          observacoes: 'Não pode comparecer no horário agendado'
-        }
-      ]);
+      setSolicitacoes([]);
     } finally {
       setLoading(false);
     }
@@ -81,13 +50,8 @@ export default function Secretaria() {
 
   const finalizarAtendimento = async (solicitacaoId) => {
     try {
-      // Simular chamada à API para marcar como atendido
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Remover da lista
+      await dashboardService.finalizarSolicitacaoSecretaria(solicitacaoId);
       setSolicitacoes(prev => prev.filter(item => item.id !== solicitacaoId));
-      
-      console.log(`Atendimento finalizado para solicitação ${solicitacaoId}`);
       alert('Atendimento finalizado com sucesso!');
     } catch (error) {
       console.error('Erro ao finalizar atendimento:', error);
@@ -112,6 +76,22 @@ export default function Secretaria() {
         </button>
       </div>
 
+      {/* Filtros de status */}
+      <div className="filters" style={{ display: 'flex', gap: 8, margin: '8px 0 16px' }}>
+        {['pendente','em_atendimento','finalizado','todos'].map((key) => (
+          <button
+            key={key}
+            onClick={() => setFiltro(key)}
+            className={`filter-btn ${filtro === key ? 'active' : ''}`}
+          >
+            {key === 'pendente' && '🟡 Pendente'}
+            {key === 'em_atendimento' && '🟠 Em atendimento'}
+            {key === 'finalizado' && '🟢 Finalizado'}
+            {key === 'todos' && '🔎 Todos'}
+          </button>
+        ))}
+      </div>
+
       {error && (
         <div className="error-message">
           ⚠️ {error}
@@ -119,8 +99,8 @@ export default function Secretaria() {
       )}
 
       <div className="secretaria-list">
-        {solicitacoes.length > 0 ? (
-          solicitacoes.map((solicitacao) => (
+        {solicitacoes.filter(s => filtro === 'todos' ? true : (s.status === filtro)).length > 0 ? (
+          solicitacoes.filter(s => filtro === 'todos' ? true : (s.status === filtro)).map((solicitacao) => (
             <div key={solicitacao.id} className="secretaria-card">
               <div className="secretaria-info">
                 <div className="paciente-info">
@@ -145,7 +125,15 @@ export default function Secretaria() {
 
               <div className="secretaria-actions">
                 <button 
-                  onClick={() => iniciarAtendimento(solicitacao)}
+                  onClick={async () => {
+                    try {
+                      await dashboardService.iniciarAtendimentoManual(solicitacao.telefone);
+                      setSolicitacoes(prev => prev.map(item => item.id === solicitacao.id ? { ...item, status: 'em_atendimento' } : item));
+                      iniciarAtendimento(solicitacao);
+                    } catch (e) {
+                      alert('Falha ao marcar como em atendimento.');
+                    }
+                  }}
                   className="btn-iniciar"
                 >
                   Iniciar Atendimento

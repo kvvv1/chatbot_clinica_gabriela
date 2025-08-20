@@ -15,38 +15,12 @@ export default function Pacientes() {
     try {
       setLoading(true);
       const dados = await dashboardService.getPacientes();
-      setPacientes(dados || []);
+      setPacientes(Array.isArray(dados) ? dados : []);
       setError(null);
     } catch (err) {
       console.error('Erro ao carregar pacientes:', err);
       setError('Erro ao carregar pacientes');
-      // Dados mock
-      setPacientes([
-        {
-          id: 1,
-          nome: 'João da Silva',
-          telefone: '+55 31 91234-5678',
-          email: 'joao.silva@email.com',
-          dataCadastro: '2024-01-10T14:30:00',
-          origem: 'Chatbot'
-        },
-        {
-          id: 2,
-          nome: 'Maria Santos',
-          telefone: '+55 31 98765-4321',
-          email: 'maria.santos@email.com',
-          dataCadastro: '2024-01-12T09:15:00',
-          origem: 'Chatbot'
-        },
-        {
-          id: 3,
-          nome: 'Pedro Oliveira',
-          telefone: '+55 31 94567-8901',
-          email: 'pedro.oliveira@email.com',
-          dataCadastro: '2024-01-15T16:45:00',
-          origem: 'Chatbot'
-        }
-      ]);
+      setPacientes([]);
     } finally {
       setLoading(false);
     }

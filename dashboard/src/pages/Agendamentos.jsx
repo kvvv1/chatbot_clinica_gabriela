@@ -20,41 +20,12 @@ export default function Agendamentos() {
     try {
       setLoading(true);
       const dados = await dashboardService.getAgendamentos();
-      setAgendamentos(dados || []);
+      setAgendamentos(Array.isArray(dados) ? dados : []);
       setError(null);
     } catch (err) {
       console.error('Erro ao carregar agendamentos:', err);
       setError('Erro ao carregar agendamentos');
-      // Dados mock para demonstração
-      setAgendamentos([
-        {
-          id: 1,
-          paciente: 'João da Silva',
-          telefone: '+55 31 91234-5678',
-          data: '2024-01-15',
-          horario: '10:00',
-          status: 'pendente',
-          observacoes: 'Primeira consulta'
-        },
-        {
-          id: 2,
-          paciente: 'Maria Santos',
-          telefone: '+55 31 98765-4321',
-          data: '2024-01-16',
-          horario: '14:30',
-          status: 'pendente',
-          observacoes: 'Retorno'
-        },
-        {
-          id: 3,
-          paciente: 'Pedro Oliveira',
-          telefone: '+55 31 94567-8901',
-          data: '2024-01-17',
-          horario: '09:00',
-          status: 'pendente',
-          observacoes: 'Consulta de rotina'
-        }
-      ]);
+      setAgendamentos([]);
     } finally {
       setLoading(false);
     }

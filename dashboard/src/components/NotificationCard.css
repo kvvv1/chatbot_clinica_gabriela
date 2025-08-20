@@ -2,7 +2,7 @@
   display: flex;
   align-items: flex-start;
   gap: 0.75rem;
-  padding: 1rem;
+  padding: 0.75rem 1rem;
   background: #ffffff;
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -14,8 +14,8 @@
   width: 100%;
   box-sizing: border-box;
   overflow: hidden;
-  min-height: 80px; /* Altura mínima para consistência */
-  max-height: 100px; /* Altura máxima reduzida para evitar espaços em branco */
+  min-height: 68px;
+  max-height: 96px;
 }
 
 .notification-card:hover {
@@ -44,10 +44,18 @@
   border-left-color: #3b82f6;
 }
 
+/* Ajuste específico para lista de espera (espera/waitlist) */
+.notification-card.espera,
+.notification-card.waitlist {
+  min-height: 64px;
+  max-height: 88px;
+  padding: 0.75rem 1rem; /* mesmo padding do agendamento (vertical e horizontal) */
+}
+
 .notification-icon {
   font-size: 0.875rem;
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -61,13 +69,13 @@
   flex: 1;
   min-width: 0;
   overflow: hidden;
-  max-height: 100px; /* Altura máxima para o conteúdo */
+  max-height: 80px; /* Conteúdo mais compacto */
 }
 
 .notification-content h4 {
   margin: 0 0 0.375rem 0;
   font-family: 'Poppins', sans-serif;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 600;
   color: #1e293b;
   word-wrap: break-word;

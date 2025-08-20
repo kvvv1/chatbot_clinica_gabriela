@@ -36,8 +36,11 @@ async function sendMessage(phone, message) {
 async function getStatus() {
   try {
     const url = `https://api.z-api.io/instances/${ZAPI_INSTANCE_ID}/token/${ZAPI_TOKEN}/status`;
-    
-    const response = await axios.get(url);
+    const response = await axios.get(url, {
+      headers: {
+        'Client-Token': ZAPI_CLIENT_TOKEN
+      }
+    });
     
     console.log('[Z-API] Status verificado');
     return response.data;

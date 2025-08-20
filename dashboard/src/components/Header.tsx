@@ -1,40 +1,46 @@
 import { useState, useEffect, useRef } from 'react';
 import './Header.css';
 import NotificationCard from './NotificationCard';
+import { dashboardService } from '../services/api';
+import type { RealtimeChannel } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 
-// Dados mock para as notificações (limitado a 3)
-const mockNotifications = [
-  {
-    id: 1,
-    type: 'agendamento',
-    title: 'Novo Agendamento',
-    message: 'Maria Silva agendou consulta para amanhã às 14:00',
-    timestamp: new Date(Date.now() - 5 * 60 * 1000), // 5 minutos atrás
-    priority: 'normal'
-  },
-  {
-    id: 2,
-    type: 'reagendamento',
-    title: 'Reagendamento Solicitado',
-    message: 'João Santos solicitou reagendamento da consulta de hoje',
-    timestamp: new Date(Date.now() - 15 * 60 * 1000), // 15 minutos atrás
-    priority: 'high'
-  },
-  {
-    id: 3,
-    type: 'cancelamento',
-    title: 'Cancelamento Confirmado',
-    message: 'Ana Costa cancelou a consulta de amanhã às 10:00',
-    timestamp: new Date(Date.now() - 30 * 60 * 1000), // 30 minutos atrás
-    priority: 'normal'
-  }
-];
+// Configuração de horário comercial (ajuste conforme necessário)
+const BUSINESS_DAYS = [1, 2, 3, 4, 5]; // 1 = segunda, 5 = sexta
+const BUSINESS_START_HOUR = 8; // 08:00
+const BUSINESS_END_HOUR = 18; // 18:00
+
+function isBusinessHours(date: Date): boolean {
+  const day = date.getDay();
+  const hour = date.getHours();
+  const isBusinessDay = BUSINESS_DAYS.includes(day);
+
+  // Considera Online entre [start, end). Ex.: 08:00 até 17:59
+  const isBusinessTime = hour >= BUSINESS_START_HOUR && hour < BUSINESS_END_HOUR;
+  return isBusinessDay && isBusinessTime;
+}
+
+interface Notificacao {
+  id: string | number;
+  type: string;
+  title: string;
+  message: string;
+  timestamp: Date | string;
+  priority?: 'normal' | 'high';
+  read?: boolean;
+  name?: string;
+  phone?: string;
+}
 
 export default function Header() {
   const [showNotifications, setShowNotifications] = useState(false);
-  const [notifications, setNotifications] = useState(mockNotifications);
-  const [unreadCount, setUnreadCount] = useState(3);
+  const [notifications, setNotifications] = useState<Notificacao[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const notificationRef = useRef<HTMLDivElement>(null);
+  const [isOnline, setIsOnline] = useState<boolean>(isBusinessHours(new Date()));
+  const supabaseUrl = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_SUPABASE_URL) || '';
+  const supabaseKey = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_SUPABASE_ANON_KEY) || '';
+  const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
   const currentTime = new Date().toLocaleString('pt-BR', {
     weekday: 'long',
@@ -47,40 +53,59 @@ export default function Header() {
 
   const handleNotificationClick = () => {
     setShowNotifications(!showNotifications);
-    if (unreadCount > 0) {
-      setUnreadCount(0);
+  };
+
+  const handleNotificationCardClick = async (notificationId: string | number) => {
+    try {
+      await dashboardService.marcarNotificacaoLida(notificationId);
+      await carregarNotificacoes();
+    } catch (e) {
+      console.error('Erro ao marcar notificação como lida:', e);
     }
   };
 
-  const handleNotificationCardClick = (notificationId: number) => {
-    // Aqui você pode adicionar lógica para marcar como lida ou navegar para a página relevante
-    console.log('Notificação clicada:', notificationId);
+  const handleMarkAllAsRead = async () => {
+    try {
+      await dashboardService.marcarTodasLidas();
+      await carregarNotificacoes();
+    } catch (e) {
+      console.error('Erro ao marcar todas como lidas:', e);
+    }
   };
 
-  const handleMarkAllAsRead = () => {
-    setUnreadCount(0);
+  const handleClearAll = async () => {
+    try {
+      await dashboardService.limparNotificacoes();
+      await carregarNotificacoes();
+    } catch (e) {
+      console.error('Erro ao limpar notificações:', e);
+    }
   };
 
-  const handleClearAll = () => {
-    setNotifications([]);
-    setUnreadCount(0);
-  };
-
-  const addTestNotification = () => {
-    const newNotification = {
-      id: Date.now(),
-      type: 'agendamento',
-      title: 'Teste - Novo Agendamento',
-      message: 'Esta é uma notificação de teste adicionada dinamicamente',
-      timestamp: new Date(),
-      priority: 'normal'
-    };
-    setNotifications(prev => {
-      const updated = [newNotification, ...prev];
-      // Limitar a 3 notificações
-      return updated.slice(0, 3);
-    });
-    setUnreadCount(prev => prev + 1);
+  const carregarNotificacoes = async () => {
+    try {
+      const data = await dashboardService.getNotificacoes();
+      const mapped: Notificacao[] = Array.isArray(data)
+        ? data.slice(0, 10).map((n: any) => ({
+            id: n.id,
+            type: n.type,
+            title: n.title,
+            message: n.message,
+            priority: n.priority,
+            timestamp: n.created_at,
+            read: n.read,
+            name: n.name,
+            phone: n.phone,
+          }))
+        : [];
+      setNotifications(mapped);
+      const unread = mapped.filter((n) => !n.read).length;
+      setUnreadCount(unread);
+    } catch (e) {
+      console.error('Erro ao carregar notificações:', e);
+      setNotifications([]);
+      setUnreadCount(0);
+    }
   };
 
   // Fechar modal quando clicar fora
@@ -99,6 +124,48 @@ export default function Header() {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [showNotifications]);
+
+  // Atualiza status Online/Offline conforme horário comercial
+  useEffect(() => {
+    const updateStatus = () => setIsOnline(isBusinessHours(new Date()));
+    const intervalId = window.setInterval(updateStatus, 60_000); // a cada 1 minuto
+    // Atualiza imediatamente ao montar
+    updateStatus();
+    return () => window.clearInterval(intervalId);
+  }, []);
+
+  // Carrega notificações inicialmente e a cada 30s (fallback)
+  useEffect(() => {
+    carregarNotificacoes();
+    const interval = window.setInterval(carregarNotificacoes, 30_000);
+    return () => window.clearInterval(interval);
+  }, []);
+
+  // Realtime via Supabase (se configurado)
+  useEffect(() => {
+    if (!supabase) return;
+    let channel: RealtimeChannel | null = null;
+    try {
+      channel = supabase
+        .channel('notifications_changes')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'notifications' },
+          () => {
+            carregarNotificacoes();
+          }
+        )
+        .subscribe();
+    } catch (e) {
+      console.warn('Realtime desabilitado:', e);
+    }
+    return () => {
+      if (channel) {
+        try { supabase.removeChannel(channel); } catch {}
+      }
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [supabaseUrl, supabaseKey]);
 
   return (
     <header className="header">
@@ -132,12 +199,6 @@ export default function Header() {
                     >
                       Limpar todas
                     </button>
-                    <button 
-                      className="action-btn test-btn"
-                      onClick={addTestNotification}
-                    >
-                      + Teste
-                    </button>
                   </div>
                 </div>
                 
@@ -148,7 +209,7 @@ export default function Header() {
                         key={notification.id}
                         onClick={() => handleNotificationCardClick(notification.id)}
                       >
-                        <NotificationCard notification={notification} />
+                        <NotificationCard notification={notification as any} />
                       </div>
                     ))
                   ) : (
@@ -168,7 +229,9 @@ export default function Header() {
             </div>
             <div className="user-details">
               <span className="user-name">Secretária</span>
-              <span className="user-role">Online</span>
+              <span className={`user-role ${isOnline ? 'online' : 'offline'}`}>
+                {isOnline ? 'Online' : 'Offline'}
+              </span>
             </div>
           </div>
         </div>

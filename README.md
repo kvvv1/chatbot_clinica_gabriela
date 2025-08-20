@@ -125,6 +125,29 @@ Recebe mensagens do Z-API
 }
 ```
 
+### Dashboard API (/api/painel)
+
+- Base: `http://localhost:3000/api/painel` (use header `x-api-key: DASHBOARD_API_KEY` se configurado)
+- Endpoints implementados:
+  - `GET /estatisticas`
+  - `GET /agendamentos`
+  - `GET /reagendamentos`
+  - `GET /cancelamentos`
+  - `GET /espera`
+  - `GET /secretaria`
+  - `GET /pacientes`
+  - `POST /agendamentos/:id/aprovar`
+  - `POST /agendamentos/:id/rejeitar`
+  - `POST /reagendamentos/:id/aprovar`
+  - `POST /cancelamentos/:id/aprovar`
+  - `POST /secretaria/atender`
+
+### Supabase
+
+1. Configure `.env` com `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY`.
+2. Rode o SQL de `supabase/schema.sql` no editor SQL do Supabase.
+3. Reinicie o servidor.
+
 **Response:**
 ```json
 {

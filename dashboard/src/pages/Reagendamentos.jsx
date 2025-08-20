@@ -32,35 +32,12 @@ export default function Reagendamentos() {
     try {
       setLoading(true);
       const dados = await dashboardService.getReagendamentos();
-      setReagendamentos(dados || []);
+      setReagendamentos(Array.isArray(dados) ? dados : []);
       setError(null);
     } catch (err) {
       console.error('Erro ao carregar reagendamentos:', err);
       setError('Erro ao carregar reagendamentos');
-      // Dados mock
-      setReagendamentos([
-        {
-          id: 1,
-          paciente: 'Ana Costa Silva',
-          telefone: '+55 31 91234-5678',
-          dataAtual: '2024-01-15',
-          horarioAtual: '10:00'
-        },
-        {
-          id: 2,
-          paciente: 'João Pedro Santos',
-          telefone: '+55 31 99876-5432',
-          dataAtual: '2024-01-16',
-          horarioAtual: '14:30'
-        },
-        {
-          id: 3,
-          paciente: 'Maria Fernanda Oliveira',
-          telefone: '+55 31 98765-4321',
-          dataAtual: '2024-01-17',
-          horarioAtual: '09:15'
-        }
-      ]);
+      setReagendamentos([]);
     } finally {
       setLoading(false);
     }
@@ -108,10 +85,15 @@ export default function Reagendamentos() {
   // Funções para executar ações
   const executarAgendado = async () => {
     try {
-      // Aqui você implementaria a lógica para confirmar agendamento
-      console.log('Confirmando agendamento:', modalAgendado.paciente, formData.novaData, formData.novoHorario);
-      alert('Agendamento confirmado com sucesso!');
+      const id = modalAgendado.paciente?.id;
+      if (!id) {
+        alert('ID do pedido de reagendamento não encontrado.');
+        return;
+      }
+      await dashboardService.aprovarReagendamento(id, formData.novaData || '');
+      alert('Reagendamento aprovado com sucesso!');
       fecharModal();
+      await carregarReagendamentos();
     } catch (error) {
       console.error('Erro ao confirmar agendamento:', error);
       alert('Erro ao confirmar agendamento');
@@ -120,10 +102,10 @@ export default function Reagendamentos() {
 
   const executarEspera = async () => {
     try {
-      // Aqui você implementaria a lógica para colocar na lista de espera
-      console.log('Adicionando à lista de espera:', modalEspera.paciente, formData.motivo);
-      alert('Paciente adicionado à lista de espera!');
+      await dashboardService.reagendarParaEspera(modalEspera.paciente?.id || modalEspera.paciente?.rescheduleId || modalEspera.paciente?.id, formData.motivo);
+      alert('Paciente enviado para lista de espera!');
       fecharModal();
+      await carregarReagendamentos();
     } catch (error) {
       console.error('Erro ao adicionar à lista de espera:', error);
       alert('Erro ao adicionar à lista de espera');
@@ -132,10 +114,10 @@ export default function Reagendamentos() {
 
   const executarNaoQuer = async () => {
     try {
-      // Aqui você implementaria a lógica para cancelar
-      console.log('Cancelando agendamento:', modalNaoQuer.paciente, formData.motivo);
-      alert('Agendamento cancelado com sucesso!');
+      await dashboardService.reagendarCancelarPedido(modalNaoQuer.paciente?.id || modalNaoQuer.paciente?.rescheduleId || modalNaoQuer.paciente?.id, formData.motivo);
+      alert('Pedido de reagendamento cancelado e cancel request aberto!');
       fecharModal();
+      await carregarReagendamentos();
     } catch (error) {
       console.error('Erro ao cancelar agendamento:', error);
       alert('Erro ao cancelar agendamento');
