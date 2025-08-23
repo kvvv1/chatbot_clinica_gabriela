@@ -241,12 +241,7 @@ CMD ["npm", "start"]
 
 Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalhes.
 
-## 📞 Suporte
 
-Para suporte, entre em contato:
-- Email: suporte@exemplo.com
-- WhatsApp: +55 11 99999-9999
 
 ---
 
-**Desenvolvido com ❤️ para automação de vendas** 
