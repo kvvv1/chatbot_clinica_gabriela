@@ -116,18 +116,38 @@ async function createNotification({ type, title, message, priority }) {
 
 async function insertAppointmentRequest({ cpf, phone, requested_date, requested_time, tipo, status, motivo }) {
   try {
-    if (!supabase) return;
-    await supabase.from('appointment_requests').insert({
+    if (!supabase) {
+      console.warn('[Supabase] Cliente não configurado. Dados não serão persistidos.');
+      return;
+    }
+    
+    if (!cpf) {
+      console.warn('[Supabase] CPF não informado para agendamento.');
+      return;
+    }
+    
+    console.log(`[Supabase] Inserindo agendamento: CPF ${cpf}, Data ${requested_date}, Hora ${requested_time}`);
+    
+    const { data, error } = await supabase.from('appointment_requests').insert({
       cpf,
       phone,
       requested_date,
       requested_time,
       tipo,
-      status: status || 'approved',
+              status: status || 'pending',
       motivo: motivo || null
     });
+    
+    if (error) {
+      throw error;
+    }
+    
+    console.log(`✅ Agendamento inserido com sucesso na dashboard. ID: ${data?.[0]?.id || 'N/A'}`);
+    return data;
   } catch (error) {
     console.error('[Supabase] insertAppointmentRequest erro:', error.message);
+    console.error('[Supabase] Detalhes do erro:', error);
+    throw error; // Re-lança o erro para tratamento superior
   }
 }
 
@@ -1290,19 +1310,41 @@ async function handleConfirmandoAgendamento(phone, message) {
         await gestaodsService.agendarConsulta(payload);
 
         // Registrar aprovação automática na dashboard (opção B)
-        await insertAppointmentRequest({
+        console.log(`[FLOW] Tentando registrar agendamento na dashboard...`);
+        console.log(`[FLOW] Dados do contexto:`, {
           cpf: context.cpf,
           phone,
-          requested_date: context.dataSelecionada,
-          requested_time: context.horaSelecionada,
-          tipo: context.tipo_consulta,
-          status: 'approved'
+          dataSelecionada: context.dataSelecionada,
+          horaSelecionada: context.horaSelecionada,
+          tipo_consulta: context.tipo_consulta
         });
-        await createNotification({
-          type: 'agendamento',
-          title: 'Agendamento confirmado',
-          message: `CPF ${context.cpf} agendado para ${context.dataSelecionada} às ${context.horaSelecionada}`
-        });
+        
+        try {
+          const resultado = await insertAppointmentRequest({
+            cpf: context.cpf,
+            phone,
+            requested_date: context.dataSelecionada,
+            requested_time: context.horaSelecionada,
+            tipo: context.tipo_consulta,
+            status: 'approved'
+          });
+          console.log(`✅ Agendamento registrado na dashboard: CPF ${context.cpf}`);
+          console.log(`✅ Resultado da inserção:`, resultado);
+        } catch (error) {
+          console.error(`❌ Erro ao registrar agendamento na dashboard:`, error.message);
+          console.error(`❌ Stack trace:`, error.stack);
+        }
+        
+        try {
+          await createNotification({
+            type: 'agendamento',
+            title: 'Agendamento confirmado',
+            message: `CPF ${context.cpf} agendado para ${context.dataSelecionada} às ${context.horaSelecionada}`
+          });
+          console.log(`✅ Notificação criada na dashboard`);
+        } catch (error) {
+          console.error(`❌ Erro ao criar notificação:`, error.message);
+        }
 
         setState(phone, 'agendamento_confirmado');
 
