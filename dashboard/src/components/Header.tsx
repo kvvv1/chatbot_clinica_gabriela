@@ -66,6 +66,13 @@ export default function Header({ onOpenMenu }: HeaderProps) {
     window.dispatchEvent(evt);
   };
 
+  // Fecha modal de notificações quando o usuário abre o drawer (sincronização)
+  useEffect(() => {
+    const onAnyOpen = () => setShowNotifications(false);
+    window.addEventListener('ui:open-sidebar', onAnyOpen as any);
+    return () => window.removeEventListener('ui:open-sidebar', onAnyOpen as any);
+  }, []);
+
   const handleNotificationCardClick = async (notificationId: string | number) => {
     try {
       await dashboardService.marcarNotificacaoLida(notificationId);
