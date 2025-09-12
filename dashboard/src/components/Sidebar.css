@@ -235,56 +235,52 @@
 /* Responsividade */
 @media (max-width: 1024px) {
   .sidebar {
-    transform: translateX(-100%);
-    transition: transform 0.3s ease;
-  }
-  
-  .sidebar.open {
-    transform: translateX(0);
+    transform: none; /* sem off-canvas em tablets */
   }
 }
 
 @media (max-width: 768px) {
+  /* No mobile o menu fica sempre visível como trilho estreito */
   .sidebar {
-    width: 260px;
+    transform: none !important;
+    width: 72px;
   }
   
   .sidebar.collapsed {
-    width: 70px;
+    width: 72px;
   }
   
   .sidebar-header {
-    padding: 1.5rem 1rem 1rem;
-  }
-  
-  .sidebar.collapsed .sidebar-header {
-    padding: 1rem 0.5rem;
+    padding: 0.75rem 0.25rem;
   }
   
   .logo {
-    height: 50px;
+    height: 36px;
   }
   
-  .sidebar.collapsed .logo {
-    height: 30px;
-  }
-  
+  /* Mostrar só ícones no trilho */
   .sidebar-nav li a {
-    padding: 0.875rem 1rem;
-    font-size: 0.8rem;
-  }
-  
-  .sidebar.collapsed .sidebar-nav li a {
-    padding: 0.875rem 0.5rem;
+    justify-content: center;
+    padding: 0.75rem 0.25rem;
+    min-height: 44px; /* alvo de toque confortável */
   }
   
   .sidebar-nav .icon {
-    font-size: 1.125rem;
-    margin-right: 0.625rem;
+    font-size: 1.2rem;
+    margin-right: 0;
+    width: 24px;
   }
   
-  .sidebar.collapsed .sidebar-nav .icon {
-    margin-right: 0;
-    font-size: 1.3rem;
+  .sidebar-nav .text {
+    display: none;
   }
 } 
+
+/* Drawer aberto no mobile: expande o Sidebar por cima do conteúdo */
+@media (max-width: 768px) {
+  .sidebar.drawer-open {
+    width: 260px;
+    box-shadow: 6px 0 20px rgba(0,0,0,0.2);
+    z-index: 9999;
+  }
+}

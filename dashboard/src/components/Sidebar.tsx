@@ -1,10 +1,15 @@
 import { Link, useLocation } from 'react-router-dom';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import logo from '../assets/logo.png';
 import logoIcon from '../assets/logo_icon.png';
 import './Sidebar.css';
 
-export default function Sidebar() {
+interface SidebarProps {
+  drawerOpen?: boolean;
+  onClose?: () => void;
+}
+
+export default function Sidebar({ drawerOpen = false, onClose }: SidebarProps) {
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -16,8 +21,17 @@ export default function Sidebar() {
     setIsCollapsed(!isCollapsed);
   };
 
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose && onClose();
+    };
+    window.addEventListener('keydown', onEsc);
+    return () => window.removeEventListener('keydown', onEsc);
+  }, [drawerOpen, onClose]);
+
   return (
-    <div className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
+    <div className={`sidebar ${isCollapsed ? 'collapsed' : ''} ${drawerOpen ? 'drawer-open' : ''}`}>
       <div className="sidebar-header">
         <div className="logo-container">
           <img 
@@ -28,7 +42,7 @@ export default function Sidebar() {
         </div>
       </div>
       
-      <nav className="sidebar-nav">
+      <nav className="sidebar-nav" onClick={onClose}>
         <div className="hamburger-container">
           <button 
             className="hamburger-button" 

@@ -61,6 +61,14 @@ body {
   box-sizing: border-box;
 }
 
+/* Overlay do drawer no mobile */
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  z-index: 998;
+}
+
 /* Estilos para cards e elementos gerais */
 .card {
   background: #ffffff;
@@ -113,7 +121,7 @@ body {
 /* Responsividade */
 @media (max-width: 1024px) {
   .main-content {
-    margin-left: 0;
+    margin-left: 0; /* tablets permanecem com layout padrão */
   }
   
   .sidebar.collapsed ~ .main-content {
@@ -129,23 +137,42 @@ body {
 
 @media (max-width: 768px) {
   .main-content {
-    margin-left: 0;
+    margin-left: 72px; /* mantém trilho */
   }
   
   .sidebar.collapsed ~ .main-content {
-    margin-left: 0;
+    margin-left: 72px;
   }
   
   .content {
     padding: 1rem;
-    padding-top: calc(70px + 1rem);
+    padding-top: calc(70px + 1rem + env(safe-area-inset-top));
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+  }
+
+  /* cantos mais arredondados no mobile */
+  .card,
+  .btn,
+  input,
+  select,
+  textarea {
+    border-radius: 16px;
   }
 }
 
 @media (max-width: 480px) {
   .content {
     padding: 0.75rem;
-    padding-top: calc(70px + 0.75rem);
+    padding-top: calc(70px + 0.75rem + env(safe-area-inset-top));
+    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+  }
+
+  .card,
+  .btn,
+  input,
+  select,
+  textarea {
+    border-radius: 18px;
   }
 }
 

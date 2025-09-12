@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { useState } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import Dashboard from './pages/Dashboard';
@@ -11,12 +12,18 @@ import Pacientes from './pages/Pacientes';
 import './App.css';
 
 function App() {
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const openDrawer = () => setDrawerOpen(true);
+  const closeDrawer = () => setDrawerOpen(false);
+
   return (
     <Router>
       <div className="app">
-        <Sidebar />
+        <Sidebar drawerOpen={drawerOpen} onClose={closeDrawer} />
         <div className="main-content">
-          <Header />
+          <Header onOpenMenu={openDrawer} />
+          {drawerOpen && <div className="drawer-overlay" onClick={closeDrawer} />}
           <div className="content">
             <Routes>
               <Route path="/" element={<Dashboard />} />
