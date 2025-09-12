@@ -21,7 +21,9 @@ function App() {
     const onResize = () => {
       if (window.innerWidth > 768 && drawerOpen) setDrawerOpen(false);
     };
+    const onCloseSidebar = () => setDrawerOpen(false);
     window.addEventListener('resize', onResize);
+    window.addEventListener('ui:close-sidebar', onCloseSidebar as any);
     return () => window.removeEventListener('resize', onResize);
   }, [drawerOpen]);
 

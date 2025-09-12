@@ -307,9 +307,10 @@
   border: 1px solid #e2e8f0;
   border-radius: 12px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-  z-index: 1001;
+  z-index: 10050; /* acima de overlay e sidebar */
   margin-top: 0;
   overflow: auto;
+  overflow-x: hidden;
   animation: slideDown 0.2s ease-out;
 }
 
@@ -459,6 +460,7 @@
     right: 8px;
     width: auto;
     max-height: calc(100vh - 90px - env(safe-area-inset-bottom));
+    z-index: 10050; /* garante acima do overlay */
   }
   
   .notification-header {

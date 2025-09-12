@@ -31,7 +31,7 @@ export default function Sidebar({ drawerOpen = false, onClose }: SidebarProps) {
   }, [drawerOpen, onClose]);
 
   return (
-    <div className={`sidebar ${isCollapsed ? 'collapsed' : ''} ${drawerOpen ? 'drawer-open' : ''}`}>
+    <div className={`sidebar ${isCollapsed ? 'collapsed' : ''} ${drawerOpen ? 'drawer-open' : ''}`} role="dialog" aria-modal={drawerOpen ? 'true' : undefined}>
       <div className="sidebar-header">
         <div className="logo-container">
           <img 

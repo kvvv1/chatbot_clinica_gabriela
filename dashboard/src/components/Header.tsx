@@ -61,6 +61,9 @@ export default function Header({ onOpenMenu }: HeaderProps) {
 
   const handleNotificationClick = () => {
     setShowNotifications(!showNotifications);
+    // Fecha possíveis drawers abertos se o modal for aberto (melhora stacking no mobile)
+    const evt = new CustomEvent('ui:close-sidebar');
+    window.dispatchEvent(evt);
   };
 
   const handleNotificationCardClick = async (notificationId: string | number) => {
