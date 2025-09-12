@@ -270,6 +270,6 @@
   .sidebar.drawer-open {
     transform: translateX(0);
     box-shadow: 6px 0 20px rgba(0,0,0,0.2);
-    z-index: 9999;
+    z-index: 1002; /* acima do overlay e modal */
   }
 }

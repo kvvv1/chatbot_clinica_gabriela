@@ -66,7 +66,7 @@ body {
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.35);
-  z-index: 998;
+  z-index: 1001; /* abaixo do sidebar.drawer-open (1002) e acima do conteúdo */
 }
 
 /* Estilos para cards e elementos gerais */

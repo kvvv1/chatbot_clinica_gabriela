@@ -298,19 +298,18 @@
 
 /* Modal de Notificações */
 .notification-modal {
-  position: absolute;
-  top: 100%;
-  right: 0;
+  position: fixed;
+  top: 80px; /* abaixo do header desktop */
+  right: 20px;
   width: 420px;
-  max-height: 600px;
+  max-height: calc(100vh - 100px);
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
-  margin-top: 400px;
-  /* Permite que o primeiro card exiba bordas/sombras sem ser cortado */
-  overflow: visible;
+  z-index: 1001;
+  margin-top: 0;
+  overflow: auto;
   animation: slideDown 0.2s ease-out;
 }
 
@@ -454,8 +453,12 @@
 /* Responsividade para o modal */
 @media (max-width: 768px) {
   .notification-modal {
-    width: 340px;
-    right: -20px;
+    position: fixed;
+    top: 70px; /* abaixo do header mobile */
+    left: 8px;
+    right: 8px;
+    width: auto;
+    max-height: calc(100vh - 90px - env(safe-area-inset-bottom));
   }
   
   .notification-header {
