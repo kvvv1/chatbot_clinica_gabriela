@@ -33,10 +33,7 @@
   gap: 0.25rem;
 }
 
-/* Botão de menu (apenas no mobile) */
-.menu-button {
-  display: none;
-}
+/* Removido botão de menu do header para não duplicar controles */
 
 .header-left h1 {
   font-family: 'Poppins', sans-serif;
@@ -186,7 +183,7 @@
 @media (max-width: 768px) {
   .header {
     height: 70px;
-    margin-left: 72px; /* mantém trilho apenas no mobile */
+    margin-left: 0; /* sem trilho visível no mobile */
   }
   
   .header-content {

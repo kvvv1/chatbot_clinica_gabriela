@@ -32,11 +32,7 @@ interface Notificacao {
   phone?: string;
 }
 
-interface HeaderProps {
-  onOpenMenu?: () => void;
-}
-
-export default function Header({ onOpenMenu }: HeaderProps) {
+export default function Header() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<Notificacao[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -175,7 +171,6 @@ export default function Header({ onOpenMenu }: HeaderProps) {
     <header className="header">
       <div className="header-content">
         <div className="header-left">
-          <button className="menu-button" aria-label="Abrir menu" onClick={onOpenMenu}>☰</button>
           <h1>Painel da Secretaria</h1>
           <p className="current-time">{currentTime}</p>
         </div>

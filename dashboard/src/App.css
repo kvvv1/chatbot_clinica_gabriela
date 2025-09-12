@@ -137,11 +137,11 @@ body {
 
 @media (max-width: 768px) {
   .main-content {
-    margin-left: 72px; /* mantém trilho */
+    margin-left: 0; /* sidebar oculto por padrão no mobile */
   }
   
   .sidebar.collapsed ~ .main-content {
-    margin-left: 72px;
+    margin-left: 0;
   }
   
   .content {

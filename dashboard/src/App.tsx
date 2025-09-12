@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import Dashboard from './pages/Dashboard';
@@ -13,16 +13,24 @@ import './App.css';
 
 function App() {
   const [drawerOpen, setDrawerOpen] = useState(false);
-
   const openDrawer = () => setDrawerOpen(true);
   const closeDrawer = () => setDrawerOpen(false);
+
+  // Fecha o drawer em telas maiores que 768
+  useEffect(() => {
+    const onResize = () => {
+      if (window.innerWidth > 768 && drawerOpen) setDrawerOpen(false);
+    };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [drawerOpen]);
 
   return (
     <Router>
       <div className="app">
         <Sidebar drawerOpen={drawerOpen} onClose={closeDrawer} />
         <div className="main-content">
-          <Header onOpenMenu={openDrawer} />
+          <Header />
           {drawerOpen && <div className="drawer-overlay" onClick={closeDrawer} />}
           <div className="content">
             <Routes>
