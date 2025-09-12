@@ -312,8 +312,10 @@
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
   z-index: 10050; /* acima de overlay e sidebar */
   margin-top: 0;
-  overflow: auto;
-  overflow-x: hidden;
+  display: flex;            /* fixa o header e deixa a lista rolar */
+  flex-direction: column;
+  min-height: 220px;        /* evita encolher quando vazio */
+  overflow: hidden;         /* scroll só na lista */
   animation: slideDown 0.2s ease-out;
 }
 
@@ -458,11 +460,12 @@
 @media (max-width: 768px) {
   .notification-modal {
     position: fixed;
-    top: 70px; /* abaixo do header mobile */
-    left: 8px;
-    right: 8px;
+    top: calc(70px + env(safe-area-inset-top));
+    left: max(env(safe-area-inset-left), 12px);
+    right: max(env(safe-area-inset-right), 12px);
     width: auto;
     max-height: calc(100vh - 90px - env(safe-area-inset-bottom));
+    min-height: 240px;      /* mantém topo alinhado mesmo sem itens */
     z-index: 10050; /* garante acima do overlay */
   }
   
@@ -480,6 +483,9 @@
   }
   
   .notification-list {
+    max-height: none; /* ocupa o restante do modal */
+    flex: 1;
+    overflow-y: auto;
     padding: 16px 16px 8px;
   }
 }
