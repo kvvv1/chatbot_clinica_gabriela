@@ -10,8 +10,7 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 10000
+      # PORT: Render fornece automaticamente em process.env.PORT; não fixe valor
       - key: CORS_ORIGINS
         sync: false
       - key: ZAPI_INSTANCE_ID
