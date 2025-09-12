@@ -54,7 +54,7 @@
   font-size: 0.875rem;
   color: #64748b;
   margin: 0;
-  text-transform: capitalize;
+  text-transform: none;
 }
 
 .header-right {
@@ -209,12 +209,13 @@
     cursor: pointer;
   }
   
-  .header-left h1 {
-    font-size: 1.125rem;
+  /* esconder título no mobile */
+  .header-title {
+    display: none;
   }
   
   .current-time {
-    font-size: 0.8rem;
+    font-size: 0.9rem;
   }
   
   .header-right {

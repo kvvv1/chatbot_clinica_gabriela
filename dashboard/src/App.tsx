@@ -30,7 +30,7 @@ function App() {
       <div className="app">
         <Sidebar drawerOpen={drawerOpen} onClose={closeDrawer} />
         <div className="main-content">
-          <Header />
+          <Header onOpenMenu={openDrawer} />
           {drawerOpen && <div className="drawer-overlay" onClick={closeDrawer} />}
           <div className="content">
             <Routes>
