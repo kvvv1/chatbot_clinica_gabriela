@@ -47,7 +47,17 @@ export default function Header({ onOpenMenu }: HeaderProps) {
   const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
   const now = new Date();
-  const currentTime = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} - ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  const timeShort = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} - ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  const timeLong = now.toLocaleString('pt-BR', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+  const isMobile = typeof window !== 'undefined' ? window.innerWidth <= 768 : true;
+  const currentTime = isMobile ? timeShort : timeLong;
 
   const handleNotificationClick = () => {
     setShowNotifications(!showNotifications);

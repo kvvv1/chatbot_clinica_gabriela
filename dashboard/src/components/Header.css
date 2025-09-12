@@ -33,7 +33,10 @@
   gap: 0.25rem;
 }
 
-/* Removido botão de menu do header para não duplicar controles */
+/* Botão do menu: oculto por padrão (desktop/tablet) */
+.menu-button {
+  display: none;
+}
 
 .header-left h1 {
   font-family: 'Poppins', sans-serif;
@@ -197,7 +200,7 @@
   }
   
   .menu-button {
-    display: inline-flex;
+    display: inline-flex; /* aparece somente no mobile */
     align-items: center;
     justify-content: center;
     width: 38px;
