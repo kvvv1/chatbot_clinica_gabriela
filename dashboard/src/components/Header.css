@@ -209,13 +209,14 @@
     cursor: pointer;
   }
   
-  /* esconder título no mobile */
-  .header-title {
-    display: none;
+  /* esconder título no mobile (forçado) */
+  .header-left .header-title {
+    display: none !important;
   }
   
   .current-time {
     font-size: 0.9rem;
+    white-space: nowrap;
   }
   
   .header-right {
