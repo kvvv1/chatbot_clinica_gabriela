@@ -62,6 +62,12 @@ export default function Sidebar({ drawerOpen = false, onClose }: SidebarProps) {
               <span className="text">Início</span>
             </Link>
           </li>
+          <li className={isActive('/estatisticas')}>
+            <Link to="/estatisticas" data-title="Estatísticas">
+              <span className="icon">📈</span>
+              <span className="text">Estatísticas</span>
+            </Link>
+          </li>
           <li className={isActive('/agendamentos')}>
             <Link to="/agendamentos" data-title="Agendamentos">
               <span className="icon">📅</span>

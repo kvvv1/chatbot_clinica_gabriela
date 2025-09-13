@@ -1,4 +1,9 @@
+/* Variável global para altura do header (usada pelo modal portado no <body>) */
+:root {
+  --header-h: 80px;
+}
 .header {
+  --header-h: 80px; /* usado para posicionar/limitar o modal de notificações */
   position: fixed;
   top: 0;
   left: 0;
@@ -80,7 +85,8 @@
 
 .notification-bell:hover {
   background-color: #f1f5f9;
-  transform: translateY(-1px);
+  /* Não aplicar transform no ancestor do modal fixo para evitar "subir" */
+  transform: none;
 }
 
 .notification-bell .icon {
@@ -187,6 +193,7 @@
   .header {
     height: 70px;
     margin-left: 0; /* sem trilho visível no mobile */
+    --header-h: 70px;
   }
   
   .header-content {
@@ -246,22 +253,8 @@
   }
 }
 
-/* Responsividade para o modal – mobile */
-@media (max-width: 768px) {
-  .notification-modal {
-    position: fixed;
-    top: calc(70px + env(safe-area-inset-top));
-    left: max(env(safe-area-inset-left), 12px);
-    right: max(env(safe-area-inset-right), 12px);
-    width: auto;
-    max-height: calc(100vh - 90px - env(safe-area-inset-bottom));
-    margin-top: 0;
-    border-radius: 12px;
-    box-sizing: border-box;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-}
+/* (removido) Regras conflitantes de posicionamento do modal no mobile.
+   O posicionamento é calculado via inline-style no componente para evitar corte. */
 
 @media (max-width: 480px) {
   .header-content {
@@ -299,37 +292,40 @@
   }
 } 
 
-/* Modal de Notificações */
-.notification-modal {
-  position: fixed;
-  top: calc(80px + env(safe-area-inset-top)); /* abaixo do header desktop + safe area */
-  right: max(env(safe-area-inset-right), 20px);
+/* Modal de Notificações (posicionado via style inline pelo portal) */
+.notification-modal,
+.notification-panel {
+  position: fixed !important; /* anula regra global [class*="modal"] { position: relative !important; } */
   width: 420px;
-  /* Altura responsiva considerando barras do navegador (vh e dvh) e safe-area */
-  max-height: calc(100vh - 100px - env(safe-area-inset-bottom));
-  max-height: calc(100dvh - 100px - env(safe-area-inset-bottom));
+  max-width: min(420px, calc(100vw - 24px));
+  max-height: min(640px, 100vh - 24px);
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-  z-index: 10050; /* acima de overlay e sidebar */
+  z-index: 10070; /* acima de header e sidebar/drawer */
   margin-top: 0;
-  display: flex;            /* fixa o header e deixa a lista rolar */
+  display: flex !important; /* evita display:none por regras globais */
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+  
+  /* fixa o header e deixa a lista rolar */
   flex-direction: column;
   min-height: 220px;        /* evita encolher quando vazio */
   overflow: hidden;         /* scroll só na lista */
-  animation: slideDown 0.2s ease-out;
+  animation: slideDown 160ms cubic-bezier(.22,.61,.36,1);
   contain: layout paint;    /* evita empurrões no layout externo */
 }
 
 @keyframes slideDown {
   from {
     opacity: 0;
-    transform: translateY(-10px);
+    transform: translateY(-6px) scale(0.98);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
 
@@ -407,10 +403,18 @@
   max-height: none;
   overflow-y: auto;
   /* Aumenta o espaçamento superior para evitar corte do primeiro card */
-  padding: 24px 20px 16px;
+  padding: 24px 20px 24px;
   box-sizing: border-box;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
+  outline: none; /* para foco via teclado */
+}
+
+/* Espaçador para o último card não colar no raio do modal */
+.notification-list::after {
+  content: '';
+  display: block;
+  height: 8px;
 }
 
 /* Garante folga extra para o primeiro item e evita "salto" no topo */
@@ -418,8 +422,23 @@
   margin-top: 6px;
 }
 
+/* Destaque do item selecionado por teclado */
+.notification-list > div[data-index] .notification-card {
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+.notification-list > div[data-selected="true"] .notification-card {
+  background: #f0f4ff;
+  box-shadow: 0 0 0 2px rgba(0, 35, 102, 0.15) inset;
+}
+
 /* Evita recorte ao passar o mouse no primeiro item (não move para cima) */
 .notification-list > div:first-child .notification-card:hover {
+  transform: none;
+}
+
+/* Evita deslocamento por hover dentro do modal */
+.notification-modal .notification-card:hover,
+.notification-panel .notification-card:hover {
   transform: none;
 }
 
@@ -464,20 +483,8 @@
   font-weight: 500;
 }
 
-/* Responsividade para o modal */
+/* Responsividade do conteúdo do modal (mantém tipografia/espacamentos, sem forçar posição) */
 @media (max-width: 768px) {
-  .notification-modal {
-    position: fixed;
-    top: calc(70px + env(safe-area-inset-top));
-    left: max(env(safe-area-inset-left), 12px);
-    right: max(env(safe-area-inset-right), 12px);
-    width: auto;
-    max-height: calc(100vh - 90px - env(safe-area-inset-bottom));
-    max-height: calc(100dvh - 90px - env(safe-area-inset-bottom));
-    min-height: 240px;      /* mantém topo alinhado mesmo sem itens */
-    z-index: 10050; /* garante acima do overlay */
-  }
-  
   .notification-header {
     padding: 12px 16px;
   }
@@ -502,11 +509,6 @@
 }
 
 @media (max-width: 480px) {
-  .notification-modal {
-    width: 300px;
-    right: -40px;
-  }
-  
   .notification-header {
     padding: 10px 12px;
   }
@@ -524,4 +526,4 @@
   .notification-list {
     padding: 14px 12px 6px;
   }
-} 
+}

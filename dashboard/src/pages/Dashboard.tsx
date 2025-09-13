@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { dashboardService } from '../services/api';
 import NotificationCard from '../components/NotificationCard';
 import './Dashboard.css';
@@ -24,6 +25,7 @@ interface Notificacao {
 }
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [estatisticas, setEstatisticas] = useState<Estatisticas>({
     agendamentosPendentes: 0,
     reagendamentos: 0,
@@ -37,17 +39,71 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Filtros de período
+  type Preset = 'today' | '7d' | 'custom';
+  const [preset, setPreset] = useState<Preset>('today');
+  const todayStr = (() => {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  })();
+  const [dataInicial, setDataInicial] = useState<string>(todayStr);
+  const [horaInicial, setHoraInicial] = useState<string>('00:00');
+  const [dataFinal, setDataFinal] = useState<string>(todayStr);
+  const [horaFinal, setHoraFinal] = useState<string>('23:59');
+  const [showCustom, setShowCustom] = useState<boolean>(false);
+
+  const calcularPeriodoIso = () => {
+    if (preset === 'today') {
+      const base = new Date();
+      const start = new Date(base);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(base);
+      end.setHours(23, 59, 59, 999);
+      return { fromIso: start.toISOString(), toIso: end.toISOString() };
+    }
+    if (preset === '7d') {
+      const end = new Date();
+      end.setHours(23, 59, 59, 999);
+      const start = new Date(end);
+      start.setDate(end.getDate() - 6);
+      start.setHours(0, 0, 0, 0);
+      return { fromIso: start.toISOString(), toIso: end.toISOString() };
+    }
+    // Custom
+    const startIso = (() => {
+      if (!dataInicial) return undefined as unknown as string;
+      const [hh = '00', mm = '00'] = (horaInicial || '00:00').split(':');
+      const d = new Date(`${dataInicial}T${hh.padStart(2,'0')}:${mm.padStart(2,'0')}:00`);
+      if (isNaN(d.getTime())) return undefined as unknown as string;
+      return d.toISOString();
+    })();
+    const endIso = (() => {
+      if (!dataFinal) return undefined as unknown as string;
+      const [hh = '23', mm = '59'] = (horaFinal || '23:59').split(':');
+      const d = new Date(`${dataFinal}T${hh.padStart(2,'0')}:${mm.padStart(2,'0')}:59.999`);
+      if (isNaN(d.getTime())) return undefined as unknown as string;
+      return d.toISOString();
+    })();
+    return { fromIso: startIso, toIso: endIso };
+  };
+
   useEffect(() => {
     carregarDados();
-    // Atualizar dados a cada 30 segundos
-    const interval = setInterval(carregarDados, 30000);
+    // Atualizar dados a cada 30 segundos respeitando os filtros atuais
+    const interval = setInterval(() => {
+      carregarDados();
+    }, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [preset, dataInicial, horaInicial, dataFinal, horaFinal]);
 
   const carregarDados = async () => {
     try {
       setLoading(true);
-      const dados = await dashboardService.getEstatisticas();
+      const { fromIso, toIso } = calcularPeriodoIso();
+      const dados = await dashboardService.getEstatisticas(fromIso, toIso);
       setEstatisticas(dados.estatisticas || estatisticas);
 
       const normalize = (n: any): Notificacao => {
@@ -129,8 +185,83 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Barra de filtros rápida */}
+      <div className="filters-bar" role="region" aria-label="Filtros de período">
+        <div className="filters-quick">
+          <button
+            className={`pill ${preset === '7d' ? 'active' : ''}`}
+            onClick={() => setPreset('7d')}
+            aria-pressed={preset === '7d'}
+            title="Últimos 7 dias"
+          >
+            7D
+          </button>
+          <button
+            className={`pill ${preset === 'today' ? 'active' : ''}`}
+            onClick={() => setPreset('today')}
+            aria-pressed={preset === 'today'}
+            title="Hoje"
+          >
+            HOJE
+          </button>
+          <button
+            className={`pill icon ${preset === 'custom' ? 'active' : ''}`}
+            onClick={() => { setPreset('custom'); setShowCustom((v) => !v); }}
+            aria-pressed={preset === 'custom'}
+            title="Personalizar período"
+          >
+            ✎
+          </button>
+        </div>
+
+        {preset === 'custom' && showCustom && (
+          <div className="custom-popover">
+            <div className="filters-grid">
+              <div className="field">
+                <label>Data inicial</label>
+                <input
+                  type="date"
+                  value={dataInicial || ''}
+                  onChange={(e) => setDataInicial(e.target.value)}
+                />
+              </div>
+              <div className="field">
+                <label>Hora inicial</label>
+                <input
+                  type="time"
+                  value={horaInicial}
+                  onChange={(e) => setHoraInicial(e.target.value)}
+                />
+              </div>
+              <div className="field">
+                <label>Data final</label>
+                <input
+                  type="date"
+                  value={dataFinal || ''}
+                  onChange={(e) => setDataFinal(e.target.value)}
+                />
+              </div>
+              <div className="field">
+                <label>Hora final</label>
+                <input
+                  type="time"
+                  value={horaFinal}
+                  onChange={(e) => setHoraFinal(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
       <div className="stats-grid">
-        <div className="stat-card">
+        <div
+          className="stat-card clickable"
+          role="button"
+          tabIndex={0}
+          onClick={() => navigate('/agendamentos')}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate('/agendamentos'); } }}
+        >
           <div className="stat-icon">📅</div>
           <div className="stat-content">
             <h3>Agendamentos Pendentes</h3>
@@ -138,7 +269,13 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="stat-card">
+        <div
+          className="stat-card clickable"
+          role="button"
+          tabIndex={0}
+          onClick={() => navigate('/reagendamentos')}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate('/reagendamentos'); } }}
+        >
           <div className="stat-icon">🔄</div>
           <div className="stat-content">
             <h3>Reagendamentos</h3>
@@ -146,7 +283,13 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="stat-card">
+        <div
+          className="stat-card clickable"
+          role="button"
+          tabIndex={0}
+          onClick={() => navigate('/cancelamentos')}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate('/cancelamentos'); } }}
+        >
           <div className="stat-icon">❌</div>
           <div className="stat-content">
             <h3>Cancelamentos</h3>
@@ -154,7 +297,13 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="stat-card">
+        <div
+          className="stat-card clickable"
+          role="button"
+          tabIndex={0}
+          onClick={() => navigate('/secretaria')}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate('/secretaria'); } }}
+        >
           <div className="stat-icon">💬</div>
           <div className="stat-content">
             <h3>Atendimentos Manuais</h3>
@@ -162,7 +311,13 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="stat-card">
+        <div
+          className="stat-card clickable"
+          role="button"
+          tabIndex={0}
+          onClick={() => navigate('/estatisticas')}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate('/estatisticas'); } }}
+        >
           <div className="stat-icon">📊</div>
           <div className="stat-content">
             <h3>Interações Hoje</h3>
@@ -170,7 +325,13 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="stat-card">
+        <div
+          className="stat-card clickable"
+          role="button"
+          tabIndex={0}
+          onClick={() => navigate('/espera')}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate('/espera'); } }}
+        >
           <div className="stat-icon">⏳</div>
           <div className="stat-content">
             <h3>Aguardando Resposta</h3>

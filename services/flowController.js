@@ -1326,7 +1326,7 @@ async function handleConfirmandoAgendamento(phone, message) {
             requested_date: context.dataSelecionada,
             requested_time: context.horaSelecionada,
             tipo: context.tipo_consulta,
-            status: 'approved'
+            status: 'pending'
           });
           console.log(`✅ Agendamento registrado na dashboard: CPF ${context.cpf}`);
           console.log(`✅ Resultado da inserção:`, resultado);

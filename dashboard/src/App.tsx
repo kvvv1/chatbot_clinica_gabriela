@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import Dashboard from './pages/Dashboard';
+import Estatisticas from './pages/Estatisticas';
 import Agendamentos from './pages/Agendamentos';
 import Reagendamentos from './pages/Reagendamentos';
 import Cancelamentos from './pages/Cancelamentos';
@@ -37,6 +38,7 @@ function App() {
           <div className="content">
             <Routes>
               <Route path="/" element={<Dashboard />} />
+              <Route path="/estatisticas" element={<Estatisticas />} />
               <Route path="/agendamentos" element={<Agendamentos />} />
               <Route path="/reagendamentos" element={<Reagendamentos />} />
               <Route path="/cancelamentos" element={<Cancelamentos />} />

@@ -36,17 +36,77 @@ router.get('/estatisticas', async (req, res) => {
       });
     }
 
-    const today = new Date();
-    today.setHours(0,0,0,0);
+    // Período opcional via query: from/to
+    const hasCustom = req.query.from || req.query.to;
+    const now = new Date();
+    let from = req.query.from ? new Date(String(req.query.from)) : new Date(now);
+    let to = req.query.to ? new Date(String(req.query.to)) : new Date(now);
+    if (!hasCustom) {
+      // Padrão: hoje (00:00 -> 23:59:59.999)
+      from = new Date(now);
+      from.setHours(0,0,0,0);
+      to = new Date(now);
+      to.setHours(23,59,59,999);
+    }
+    const fromIso = isNaN(from.getTime()) ? undefined : from.toISOString();
+    const toIso = isNaN(to.getTime()) ? undefined : to.toISOString();
 
     const [appointments, reschedules, cancels, tickets, waitlist, messages, notifications] = await Promise.all([
-      supabase.from('appointment_requests').select('*', { count: 'exact', head: true }).eq('status','pending'),
-      supabase.from('reschedule_requests').select('*', { count: 'exact', head: true }).eq('status','pending'),
-      supabase.from('cancel_requests').select('*', { count: 'exact', head: true }).eq('status','pending'),
-      supabase.from('secretary_tickets').select('*', { count: 'exact', head: true }).eq('status','pendente'),
-      supabase.from('waitlist').select('*', { count: 'exact', head: true }).eq('status','pending'),
-      supabase.from('messages').select('*', { count: 'exact', head: true }).gte('created_at', today.toISOString()),
-      supabase.from('notifications').select('*').order('created_at', { ascending: false }).limit(10)
+      // Contagens dos cards por registros criados no período (sem filtrar por status)
+      (fromIso && toIso
+        ? supabase.from('appointment_requests').select('*', { count: 'exact', head: true }).gte('created_at', fromIso).lte('created_at', toIso)
+        : fromIso
+        ? supabase.from('appointment_requests').select('*', { count: 'exact', head: true }).gte('created_at', fromIso)
+        : toIso
+        ? supabase.from('appointment_requests').select('*', { count: 'exact', head: true }).lte('created_at', toIso)
+        : supabase.from('appointment_requests').select('*', { count: 'exact', head: true })
+      ),
+      (fromIso && toIso
+        ? supabase.from('reschedule_requests').select('*', { count: 'exact', head: true }).gte('created_at', fromIso).lte('created_at', toIso)
+        : fromIso
+        ? supabase.from('reschedule_requests').select('*', { count: 'exact', head: true }).gte('created_at', fromIso)
+        : toIso
+        ? supabase.from('reschedule_requests').select('*', { count: 'exact', head: true }).lte('created_at', toIso)
+        : supabase.from('reschedule_requests').select('*', { count: 'exact', head: true })
+      ),
+      (fromIso && toIso
+        ? supabase.from('cancel_requests').select('*', { count: 'exact', head: true }).gte('created_at', fromIso).lte('created_at', toIso)
+        : fromIso
+        ? supabase.from('cancel_requests').select('*', { count: 'exact', head: true }).gte('created_at', fromIso)
+        : toIso
+        ? supabase.from('cancel_requests').select('*', { count: 'exact', head: true }).lte('created_at', toIso)
+        : supabase.from('cancel_requests').select('*', { count: 'exact', head: true })
+      ),
+      (fromIso && toIso
+        ? supabase.from('secretary_tickets').select('*', { count: 'exact', head: true }).gte('created_at', fromIso).lte('created_at', toIso)
+        : fromIso
+        ? supabase.from('secretary_tickets').select('*', { count: 'exact', head: true }).gte('created_at', fromIso)
+        : toIso
+        ? supabase.from('secretary_tickets').select('*', { count: 'exact', head: true }).lte('created_at', toIso)
+        : supabase.from('secretary_tickets').select('*', { count: 'exact', head: true })
+      ),
+      (fromIso && toIso
+        ? supabase.from('waitlist').select('*', { count: 'exact', head: true }).gte('created_at', fromIso).lte('created_at', toIso)
+        : fromIso
+        ? supabase.from('waitlist').select('*', { count: 'exact', head: true }).gte('created_at', fromIso)
+        : toIso
+        ? supabase.from('waitlist').select('*', { count: 'exact', head: true }).lte('created_at', toIso)
+        : supabase.from('waitlist').select('*', { count: 'exact', head: true })
+      ),
+      // Interações/mensagens dentro do período selecionado
+      (fromIso && toIso
+        ? supabase.from('messages').select('*', { count: 'exact', head: true }).gte('created_at', fromIso).lte('created_at', toIso)
+        : fromIso
+        ? supabase.from('messages').select('*', { count: 'exact', head: true }).gte('created_at', fromIso)
+        : supabase.from('messages').select('*', { count: 'exact', head: true }).lte('created_at', toIso)
+      ),
+      // Notificações também respeitam o período, mas sempre traz no máximo 10 mais recentes
+      (fromIso && toIso
+        ? supabase.from('notifications').select('*').gte('created_at', fromIso).lte('created_at', toIso).order('created_at', { ascending: false }).limit(10)
+        : fromIso
+        ? supabase.from('notifications').select('*').gte('created_at', fromIso).order('created_at', { ascending: false }).limit(10)
+        : supabase.from('notifications').select('*').lte('created_at', toIso).order('created_at', { ascending: false }).limit(10)
+      )
     ]);
 
     const estatisticas = {
@@ -538,7 +598,11 @@ router.post('/notificacoes/ler-todas', async (req, res) => {
 router.delete('/notificacoes', async (req, res) => {
   try {
     if (!supabase) return res.json({ success: true });
-    const { error } = await supabase.from('notifications').delete().neq('id', null);
+    // Evita comparar UUID com string 'null' (erro de cast). Usa IS NOT NULL corretamente.
+    const { error } = await supabase
+      .from('notifications')
+      .delete()
+      .not('id', 'is', null);
     if (error) throw error;
     return res.json({ success: true });
   } catch (error) {
@@ -550,3 +614,180 @@ router.delete('/notificacoes', async (req, res) => {
 module.exports = router;
 
 
+
+// ==============================
+// Estatísticas detalhadas
+// ==============================
+router.get('/estatisticas/detalhadas', async (req, res) => {
+  try {
+    if (!supabase) return res.json({});
+
+    const toParam = req.query.to ? new Date(String(req.query.to)) : new Date();
+    const fromParam = req.query.from ? new Date(String(req.query.from)) : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const to = new Date(isNaN(toParam.getTime()) ? Date.now() : toParam.getTime());
+    const from = new Date(isNaN(fromParam.getTime()) ? Date.now() - 7 * 24 * 60 * 60 * 1000 : fromParam.getTime());
+
+    // Normaliza para ISO
+    const fromIso = from.toISOString();
+    const toIso = to.toISOString();
+
+    // Busca dados paralelos
+    const [messagesRes, notificationsRes, apptsRes, reschedRes, cancelsRes, ticketsRes] = await Promise.all([
+      supabase.from('messages').select('id, phone, created_at').gte('created_at', fromIso).lte('created_at', toIso).order('created_at', { ascending: true }).limit(10000),
+      supabase.from('notifications').select('id, type, created_at, read').gte('created_at', fromIso).lte('created_at', toIso).limit(10000),
+      supabase.from('appointment_requests').select('id, phone, created_at, status').gte('created_at', fromIso).lte('created_at', toIso).limit(10000),
+      supabase.from('reschedule_requests').select('id, phone, created_at, status').gte('created_at', fromIso).lte('created_at', toIso).limit(10000),
+      supabase.from('cancel_requests').select('id, phone, created_at, status').gte('created_at', fromIso).lte('created_at', toIso).limit(10000),
+      supabase.from('secretary_tickets').select('id, phone, created_at, status').gte('created_at', fromIso).lte('created_at', toIso).limit(10000),
+    ]);
+
+    const messages = messagesRes.data || [];
+    const notifications = notificationsRes.data || [];
+    const appts = (apptsRes.data || []).filter(r => r.status === 'approved');
+    const resched = (reschedRes.data || []).filter(r => r.status === 'approved');
+    const cancels = (cancelsRes.data || []).filter(r => r.status === 'approved');
+    const tickets = ticketsRes.data || [];
+
+    // Mensagens por dia
+    const messagesByDay = new Map();
+    for (const m of messages) {
+      const d = new Date(m.created_at);
+      const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      messagesByDay.set(key, (messagesByDay.get(key) || 0) + 1);
+    }
+    const messagesPorDia = Array.from(messagesByDay.entries()).sort((a,b) => a[0] < b[0] ? -1 : 1).map(([date, count]) => ({ date, count }));
+
+    // Agrupar conversas por phone com janela de 30min
+    const sessions = [];
+    const byPhone = new Map();
+    for (const m of messages) {
+      const phone = m.phone || 'desconhecido';
+      if (!byPhone.has(phone)) byPhone.set(phone, []);
+      byPhone.get(phone).push(m);
+    }
+    const SESSION_GAP_MS = 30 * 60 * 1000;
+    for (const [phone, msgs] of byPhone.entries()) {
+      msgs.sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
+      let start = null, last = null, count = 0;
+      for (const m of msgs) {
+        const ts = new Date(m.created_at).getTime();
+        if (start === null) { start = ts; last = ts; count = 1; continue; }
+        if (ts - last > SESSION_GAP_MS) {
+          sessions.push({ phone, start, end: last, count });
+          start = ts; last = ts; count = 1;
+        } else {
+          last = ts; count += 1;
+        }
+      }
+      if (start !== null) sessions.push({ phone, start, end: last, count });
+    }
+
+    // Durações
+    const durations = sessions.map(s => Math.max(0, (s.end - s.start)));
+    const sortedDur = [...durations].sort((a,b) => a-b);
+    const percentile = (arr, p) => {
+      if (!arr.length) return 0;
+      const idx = Math.min(arr.length - 1, Math.floor(p * arr.length));
+      return arr[idx];
+    };
+    const medianMs = percentile(sortedDur, 0.5);
+    const p95Ms = percentile(sortedDur, 0.95);
+
+    // Top conversas mais longas
+    const topConversas = sessions
+      .map(s => ({ phone: s.phone, mensagens: s.count, inicio: new Date(s.start).toISOString(), fim: new Date(s.end).toISOString(), duracaoMs: Math.max(0, s.end - s.start) }))
+      .sort((a,b) => b.duracaoMs - a.duracaoMs)
+      .slice(0, 10);
+
+    // Tickets por status e SLAs
+    const ticketsPorStatus = tickets.reduce((acc, t) => {
+      acc[t.status || 'desconhecido'] = (acc[t.status || 'desconhecido'] || 0) + 1;
+      return acc;
+    }, {});
+
+    // SLA primeira resposta: início da conversa -> primeiro ticket em_atendimento (ou criação)
+    const firstTicketByPhone = new Map();
+    const orderedTickets = [...tickets].sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
+    for (const t of orderedTickets) {
+      const phone = t.phone || 'desconhecido';
+      if (!firstTicketByPhone.has(phone)) firstTicketByPhone.set(phone, t);
+    }
+    const firstResponseDurations = [];
+    for (const s of sessions) {
+      const ft = firstTicketByPhone.get(s.phone);
+      if (!ft) continue;
+      const t0 = s.start;
+      const t1 = new Date(ft.created_at).getTime();
+      if (t1 >= t0) firstResponseDurations.push(t1 - t0);
+    }
+    const frSorted = firstResponseDurations.sort((a,b) => a-b);
+    const slaMedianMs = percentile(frSorted, 0.5);
+    const slaP95Ms = percentile(frSorted, 0.95);
+
+    // Tempo até marcar por tipo (considera primeiro aprovado após início da conversa)
+    function buildFirstApprovedByPhone(rows) {
+      const m = new Map();
+      const ordered = [...rows].sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
+      for (const r of ordered) {
+        const phone = r.phone || 'desconhecido';
+        if (!m.has(phone)) m.set(phone, r);
+      }
+      return m;
+    }
+    const firstApproved = {
+      agendamento: buildFirstApprovedByPhone(appts),
+      reagendamento: buildFirstApprovedByPhone(resched),
+      cancelamento: buildFirstApprovedByPhone(cancels),
+    };
+    function durationsUntil(mapByPhone) {
+      const arr = [];
+      for (const s of sessions) {
+        const row = mapByPhone.get(s.phone);
+        if (!row) continue;
+        const t1 = new Date(row.created_at).getTime();
+        if (t1 >= s.start) arr.push(t1 - s.start);
+      }
+      const sorted = arr.sort((a,b) => a-b);
+      return { medianaMs: percentile(sorted, 0.5), p95Ms: percentile(sorted, 0.95), amostras: arr.length };
+    }
+    const temposAteMarcarMs = {
+      agendamento: durationsUntil(firstApproved.agendamento),
+      reagendamento: durationsUntil(firstApproved.reagendamento),
+      cancelamento: durationsUntil(firstApproved.cancelamento),
+    };
+
+    // Notificações por tipo
+    const notificacoesPorTipo = Object.entries(
+      notifications.reduce((acc, n) => {
+        const key = (n.type || 'geral').toLowerCase();
+        acc[key] = (acc[key] || 0) + 1;
+        return acc;
+      }, {})
+    ).map(([type, count]) => ({ type, count }));
+
+    // Funnel
+    const phonesWithTickets = new Set(tickets.map(t => t.phone || 'desconhecido'));
+    const withHuman = sessions.filter(s => phonesWithTickets.has(s.phone)).length;
+    const results = {
+      agendamento: appts.length,
+      reagendamento: resched.length,
+      cancelamento: cancels.length,
+    };
+
+    const response = {
+      periodo: { from: fromIso, to: toIso },
+      messages: { total: messages.length, porDia: messagesPorDia },
+      conversas: { total: sessions.length, duracao: { medianaMs: medianMs, p95Ms }, top: topConversas },
+      notificacoesPorTipo,
+      funnel: { conversas: sessions.length, comHumano: withHuman, resolvidasBot: Math.max(0, sessions.length - withHuman), resultados: results },
+      slaPrimeiraRespostaMs: { medianaMs: slaMedianMs, p95Ms: slaP95Ms },
+      temposAteMarcarMs,
+      tickets: { porStatus: ticketsPorStatus }
+    };
+
+    return res.json(response);
+  } catch (error) {
+    console.error('[painel/estatisticas/detalhadas] erro:', error.message || error);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});

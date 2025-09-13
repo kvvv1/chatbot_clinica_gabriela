@@ -35,9 +35,12 @@ api.interceptors.response.use(
 // Serviços da Dashboard
 export const dashboardService = {
   // Estatísticas gerais
-  getEstatisticas: async () => {
+  getEstatisticas: async (fromIso, toIso) => {
     try {
-      const response = await api.get('/painel/estatisticas');
+      const params = {};
+      if (fromIso) params.from = fromIso;
+      if (toIso) params.to = toIso;
+      const response = await api.get('/painel/estatisticas', { params });
       return response.data;
     } catch (error) {
       console.error('Erro ao buscar estatísticas:', error);
@@ -249,6 +252,20 @@ export const dashboardService = {
       return response.data;
     } catch (error) {
       console.error('Erro ao limpar notificações:', error);
+      throw error;
+    }
+  },
+
+  // Estatísticas detalhadas
+  getEstatisticasDetalhadas: async (fromIso, toIso) => {
+    try {
+      const params = {};
+      if (fromIso) params.from = fromIso;
+      if (toIso) params.to = toIso;
+      const response = await api.get('/painel/estatisticas/detalhadas', { params });
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao buscar estatísticas detalhadas:', error);
       throw error;
     }
   }
