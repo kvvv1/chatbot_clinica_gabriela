@@ -847,15 +847,41 @@ async function handleAguardandoCpf(phone, message) {
     // Persist paciente com dados completos
     upsertPatient({ cpf: message, name: nome, phone, email });
 
-    setState(phone, 'confirmando_paciente');
+    // Pula a confirmação e segue direto para a lista de datas disponíveis
+    setState(phone, 'escolhendo_data');
 
-    return (
-      `✅ *CPF ${message} encontrado no sistema!*\n\n` +
-      `Confirma que é você?\n\n` +
-      `1️⃣ Sim\n` +
-      `2️⃣ Não\n` +
-      `0️⃣ Menu`
-    );
+    try {
+      if (!context.token) {
+        context.token = process.env.GESTAODS_TOKEN;
+        setContext(phone, context);
+      }
+
+      const dias = await buscarDatasDisponiveis(context.token);
+
+      if (!dias || dias.length === 0) {
+        return (
+          "❌ Nenhuma data disponível no momento.\n\n" +
+          "Tente novamente mais tarde ou digite *menu* para voltar ao início."
+        );
+      }
+
+      let mensagem = "📅 *Datas disponíveis para consulta:*\n\n";
+      dias.forEach((data, index) => {
+        mensagem += `*${index + 1}* - ${data.data}\n`;
+      });
+      mensagem += "\nDigite o número da data desejada:";
+
+      context.datasDisponiveis = dias;
+      setContext(phone, context);
+
+      return mensagem;
+    } catch (error) {
+      console.error("Erro ao buscar datas disponíveis:", error);
+      return (
+        "❌ Ocorreu um erro ao buscar as datas disponíveis.\n" +
+        "Por favor, tente novamente mais tarde ou digite *menu* para retornar ao início."
+      );
+    }
   } else {
     const cpfDigitado = message.replace(/\D/g, ''); // Remove caracteres não numéricos
     return (
