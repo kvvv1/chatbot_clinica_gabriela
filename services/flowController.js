@@ -861,7 +861,7 @@ async function handleAguardandoCpf(phone, message) {
     return (
       "❌ CPF inválido!\n\n" +
       `Você digitou: ${message}\n` +
-      `CPF deve ter exatamente 11 dígitos numéricos.\n` +
+      `CPF deve ter exatamente 11 dígitos APENAS numéricos, sem pontos.\n` +
       "Exemplo: 12345678901\n\n" +
       "Digite *voltar* para retornar ao menu principal."
     );
