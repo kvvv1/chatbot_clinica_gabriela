@@ -5,7 +5,7 @@ import './Secretaria.css';
 
 export default function Secretaria() {
   const [solicitacoes, setSolicitacoes] = useState([]);
-  const [filtro, setFiltro] = useState('pendente'); // pendente | em_atendimento | finalizado | todos
+  const [filtro, setFiltro] = useState('todos'); // pendente | em_atendimento | finalizado | todos
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   

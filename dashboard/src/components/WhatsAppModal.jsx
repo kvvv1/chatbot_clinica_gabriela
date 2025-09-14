@@ -9,9 +9,14 @@ const WhatsAppModal = ({ isOpen, onClose, paciente }) => {
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [messages, setMessages] = useState([]);
+  const [hasMore, setHasMore] = useState(true);
+  const lastTsRef = useRef(null);
   const [error, setError] = useState('');
   const pollRef = useRef(null);
   const messagesEndRef = useRef(null);
+  const chatContainerRef = useRef(null);
+  const isNearBottomRef = useRef(true);
+  const [isNearBottom, setIsNearBottom] = useState(true);
   
   const telefoneFormatado = paciente?.telefone?.replace(/\D/g, '');
   const fullPhone = useMemo(() => {
@@ -57,16 +62,112 @@ const WhatsAppModal = ({ isOpen, onClose, paciente }) => {
     } catch {}
   };
 
-  const carregarConversa = async () => {
+  const handleScroll = () => {
+    try {
+      const el = chatContainerRef.current;
+      if (!el) return;
+      const threshold = 0; // considerar "no fundo" apenas quando exatamente no fim
+      const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
+      const near = distance <= threshold;
+      isNearBottomRef.current = near;
+      setIsNearBottom(near);
+
+      // Auto carregar mais antigas ao chegar no topo
+      if (el.scrollTop <= 0 && hasMore && !loading) {
+        carregarMaisAntigas();
+      }
+    } catch {}
+  };
+
+  const carregarConversa = async (opts = {}) => {
+    const { silent = false } = opts;
     if (!fullPhone) return;
-    setLoading(true);
+    if (!silent) setLoading(true);
     setError('');
     try {
-      const data = await dashboardService.getConversa(fullPhone, 200);
-      setMessages(Array.isArray(data) ? data : []);
-      setTimeout(scrollToBottom, 50);
+      // Captura posição de rolagem antes de atualizar
+      const containerBefore = chatContainerRef.current;
+      const wasAtBottom = (() => {
+        try {
+          if (!containerBefore) return false;
+          const distance = containerBefore.scrollHeight - containerBefore.scrollTop - containerBefore.clientHeight;
+          return distance <= 1;
+        } catch { return false; }
+      })();
+      const prevScrollTop = containerBefore ? containerBefore.scrollTop : 0;
+      const prevScrollHeight = containerBefore ? containerBefore.scrollHeight : 0;
+
+      const afterIso = lastTsRef.current ? new Date(lastTsRef.current).toISOString() : undefined;
+      const data = await dashboardService.getConversa(fullPhone, 200, undefined, afterIso);
+      const fetched = Array.isArray(data) ? data : [];
+      const existingIds = new Set(messages.map((m) => m.id));
+      const appended = fetched.filter((m) => !existingIds.has(m.id));
+      if (messages.length === 0) {
+        setMessages(fetched);
+      } else if (appended.length > 0) {
+        setMessages((prev) => [...prev, ...appended]);
+      }
+      // Atualiza lastTs com o último created_at recebido
+      const latest = [...messages, ...appended].reduce((acc, m) => {
+        const t = m.created_at ? new Date(m.created_at).getTime() : 0;
+        return Math.max(acc, t);
+      }, lastTsRef.current || 0);
+      lastTsRef.current = latest || lastTsRef.current;
+      setHasMore(fetched.length >= 200);
+      // Preservar posição: se estava no fundo, mantém no fundo; senão, mantém posição atual
+      setTimeout(() => {
+        try {
+          const container = chatContainerRef.current;
+          if (!container) return;
+          if (wasAtBottom) {
+            container.scrollTop = container.scrollHeight;
+          } else {
+            // Mantém a posição relativa ao topo (para appends no final, basta manter scrollTop)
+            // Se houver algum ajuste necessário por variação de altura, compensa:
+            const newScrollHeight = container.scrollHeight;
+            const heightDelta = newScrollHeight - prevScrollHeight;
+            // Para appends no final, heightDelta > 0 e manter scrollTop é suficiente.
+            // Caso algo mude acima, ajusta para manter o mesmo conteúdo visível.
+            container.scrollTop = prevScrollTop; // + 0 (sem mudança)
+          }
+        } catch {}
+      }, 0);
     } catch (e) {
       setError('Falha ao carregar conversa.');
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  };
+
+  const carregarMaisAntigas = async () => {
+    if (!fullPhone || !hasMore || messages.length === 0) return;
+    const el = chatContainerRef.current;
+    const prevScrollTop = el ? el.scrollTop : 0;
+    const prevScrollHeight = el ? el.scrollHeight : 0;
+    setLoading(true);
+    try {
+      const oldest = messages[0];
+      const beforeIso = oldest?.created_at ? new Date(oldest.created_at).toISOString() : undefined;
+      const data = await dashboardService.getConversa(fullPhone, 200, beforeIso, undefined);
+      const older = Array.isArray(data) ? data : [];
+      if (older.length === 0) {
+        setHasMore(false);
+        return;
+      }
+      setMessages(prev => [...older, ...prev]);
+      // preservar posição de rolagem após inserir mensagens acima
+      setTimeout(() => {
+        try {
+          const container = chatContainerRef.current;
+          if (!container) return;
+          const newScrollHeight = container.scrollHeight;
+          const delta = newScrollHeight - prevScrollHeight;
+          container.scrollTop = prevScrollTop + delta;
+        } catch {}
+      }, 0);
+      setHasMore(older.length >= 200);
+    } catch (e) {
+      // silencia
     } finally {
       setLoading(false);
     }
@@ -74,18 +175,21 @@ const WhatsAppModal = ({ isOpen, onClose, paciente }) => {
 
   useEffect(() => {
     if (!isOpen || !paciente) return;
-    carregarConversa();
+    // Reset estados ao abrir nova conversa
+    setMessages([]);
+    setHasMore(true);
+    lastTsRef.current = null;
+    carregarConversa({ silent: false });
+    // Reinicia polling automático fixo (5s)
     if (pollRef.current) clearInterval(pollRef.current);
-    pollRef.current = setInterval(carregarConversa, 5000);
+    pollRef.current = setInterval(() => carregarConversa({ silent: true }), 5000);
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, fullPhone]);
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+  // Removido autoscroll em cada atualização; preservação de rolagem é feita em carregarConversa/carregarMaisAntigas
 
   const handleSendMessage = async () => {
     if (!message.trim() || !fullPhone) return;
@@ -94,7 +198,7 @@ const WhatsAppModal = ({ isOpen, onClose, paciente }) => {
     try {
       await dashboardService.enviarMensagemWhatsApp(fullPhone, message.trim());
       setMessage('');
-      await carregarConversa();
+      await carregarConversa({ silent: true });
     } catch (e) {
       setError('Falha ao enviar mensagem.');
     } finally {
@@ -174,7 +278,24 @@ const WhatsAppModal = ({ isOpen, onClose, paciente }) => {
                 </div>
               </div>
               
-               <div className="chat-messages">
+               <div className="chat-messages" ref={chatContainerRef} onScroll={handleScroll}>
+                {hasMore && (
+                  <div className="load-more-top" style={{ textAlign: 'center', padding: '8px' }}>
+                    <button
+                      onClick={carregarMaisAntigas}
+                      disabled={loading}
+                      style={{
+                        background: '#e5e7eb',
+                        border: '1px solid #d1d5db',
+                        borderRadius: 8,
+                        padding: '6px 10px',
+                        cursor: loading ? 'not-allowed' : 'pointer'
+                      }}
+                    >
+                      {loading ? 'Carregando...' : 'Carregar mensagens anteriores'}
+                    </button>
+                  </div>
+                )}
                 {loading && (
                   <div style={{ padding: '8px', textAlign: 'center', color: '#6b7280' }}>Carregando...</div>
                 )}
@@ -196,24 +317,24 @@ const WhatsAppModal = ({ isOpen, onClose, paciente }) => {
                   );
                 })}
                 <div ref={messagesEndRef} />
+              </div>
 
-                <div className="message-input-area">
-                  <input 
-                    type="text" 
-                    placeholder="Digite sua mensagem..."
-                    className="message-input"
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                  />
-                  <button 
-                    className="send-button"
-                    onClick={handleSendMessage}
-                    disabled={!message.trim() || sending}
-                  >
-                    {sending ? '...' : '📤'}
-                  </button>
-                </div>
+              <div className="message-input-area">
+                <input 
+                  type="text" 
+                  placeholder="Digite sua mensagem..."
+                  className="message-input"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                />
+                <button 
+                  className="send-button"
+                  onClick={handleSendMessage}
+                  disabled={!message.trim() || sending}
+                >
+                  {sending ? '...' : '📤'}
+                </button>
               </div>
             </div>
           )}

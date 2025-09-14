@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { supabase } = require('../services/supabaseClient');
+const zapiService = require('../services/zapiService');
 
 // Middleware simples de API Key
 router.use((req, res, next) => {
@@ -429,20 +430,22 @@ router.post('/secretaria/atender', async (req, res) => {
     // Tenta encontrar o ticket pendente mais recente desse telefone
     const { data: rows, error: selErr } = await supabase
       .from('secretary_tickets')
-      .select('id')
+      .select('id, status')
       .eq('phone', telefone)
-      .eq('status', 'pendente')
+      .in('status', ['pendente','em_atendimento'])
       .order('created_at', { ascending: false })
       .limit(1);
     if (selErr) throw selErr;
 
     if (Array.isArray(rows) && rows.length > 0) {
-      const ticketId = rows[0].id;
-      const { error: updErr } = await supabase
-        .from('secretary_tickets')
-        .update({ status: 'em_atendimento' })
-        .eq('id', ticketId);
-      if (updErr) throw updErr;
+      const ticket = rows[0];
+      if (ticket.status !== 'em_atendimento') {
+        const { error: updErr } = await supabase
+          .from('secretary_tickets')
+          .update({ status: 'em_atendimento' })
+          .eq('id', ticket.id);
+        if (updErr) throw updErr;
+      }
     } else {
       // Fallback: cria um novo registro marcado como em atendimento
       const { error: insErr } = await supabase
@@ -453,6 +456,54 @@ router.post('/secretaria/atender', async (req, res) => {
     return res.json({ success: true });
   } catch (error) {
     console.error('[secretaria/atender] erro:', error.message);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+// Limpar duplicados de tickets por telefone mantendo o mais recente não finalizado
+router.post('/secretaria/limpar-duplicados', async (req, res) => {
+  try {
+    if (!supabase) return res.json({ success: true, removidos: 0 });
+
+    // Busca últimos 500 tickets
+    const { data: tickets, error: listErr } = await supabase
+      .from('secretary_tickets')
+      .select('id, phone, status, created_at')
+      .order('created_at', { ascending: false })
+      .limit(500);
+    if (listErr) throw listErr;
+
+    const byPhone = new Map();
+    const toDelete = [];
+    for (const t of tickets || []) {
+      const phone = t.phone || 'unknown';
+      if (!byPhone.has(phone)) {
+        byPhone.set(phone, []);
+      }
+      byPhone.get(phone).push(t);
+    }
+
+    byPhone.forEach((arr) => {
+      // mantém prioridade: em_atendimento > pendente > finalizado, mais recente vence
+      const emAt = arr.find(a => a.status === 'em_atendimento');
+      const pend = arr.find(a => a.status === 'pendente');
+      const keep = emAt || pend || arr[0];
+      arr.forEach(a => { if (a.id !== keep.id) toDelete.push(a.id); });
+    });
+
+    let removidos = 0;
+    if (toDelete.length > 0) {
+      const { error: delErr } = await supabase
+        .from('secretary_tickets')
+        .delete()
+        .in('id', toDelete);
+      if (delErr) throw delErr;
+      removidos = toDelete.length;
+    }
+
+    return res.json({ success: true, removidos });
+  } catch (error) {
+    console.error('[secretaria/limpar-duplicados] erro:', error.message);
     return res.status(500).json({ error: 'internal_error' });
   }
 });
@@ -607,6 +658,83 @@ router.delete('/notificacoes', async (req, res) => {
     return res.json({ success: true });
   } catch (error) {
     console.error('[painel/notificacoes/delete] erro:', error.message);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+// ==============================
+// Conversa (mensagens por telefone) e envio manual
+// ==============================
+
+// GET /painel/conversa?phone=5511999999999&limit=200&before=ISO_DATE
+router.get('/conversa', async (req, res) => {
+  try {
+    const raw = String(req.query.phone || req.query.telefone || '').trim();
+    const phone = raw.replace(/\D/g, '');
+    const limit = Math.max(1, Math.min(parseInt(String(req.query.limit || '200'), 10) || 200, 500));
+    const before = req.query.before ? new Date(String(req.query.before)) : null;
+    const after = req.query.after ? new Date(String(req.query.after)) : null;
+    if (!phone) return res.json([]);
+    if (!supabase) return res.json([]);
+
+    // Normaliza: tenta casar com e sem código do país (55)
+    const phoneNo55 = phone.startsWith('55') ? phone.slice(2) : phone;
+    const phoneWith55 = phone.startsWith('55') ? phone : `55${phone}`;
+
+    let query = supabase
+      .from('messages')
+      .select('id, phone, direction, content, created_at')
+      .or(
+        [
+          `phone.eq.${phone}`,
+          `phone.ilike.%${phone}%`,
+          `phone.eq.${phoneNo55}`,
+          `phone.ilike.%${phoneNo55}%`,
+          `phone.eq.${phoneWith55}`,
+          `phone.ilike.%${phoneWith55}%`
+        ].join(',')
+      );
+    if (before && !isNaN(before.getTime())) {
+      query = query.lt('created_at', before.toISOString());
+    }
+    if (after && !isNaN(after.getTime())) {
+      query = query.gt('created_at', after.toISOString());
+    }
+    const { data, error } = await query
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    if (error) throw error;
+    const normalized = Array.isArray(data) ? [...data].sort((a,b) => new Date(a.created_at) - new Date(b.created_at)) : [];
+    return res.json(normalized);
+  } catch (error) {
+    console.error('[painel/conversa] erro:', error.message || error);
+    return res.status(500).json([]);
+  }
+});
+
+// POST /painel/mensagens/whatsapp { phone, message }
+router.post('/mensagens/whatsapp', async (req, res) => {
+  try {
+    const { phone: rawPhone, message } = req.body || {};
+    const phone = (String(rawPhone || '').trim()).replace(/\D/g, '');
+    const text = typeof message === 'string' ? message.trim() : '';
+    if (!phone || !text) return res.status(400).json({ error: 'missing_params' });
+
+    // Envia via Z-API
+    await zapiService.sendMessage(phone, text);
+
+    // Log opcional no Supabase
+    try {
+      if (supabase) {
+        await supabase.from('messages').insert({ phone, direction: 'out', content: text });
+      }
+    } catch (e) {
+      console.warn('[painel/mensagens/whatsapp] falha ao logar mensagem:', e.message);
+    }
+
+    return res.json({ success: true });
+  } catch (error) {
+    console.error('[painel/mensagens/whatsapp] erro:', error.message || error);
     return res.status(500).json({ error: 'internal_error' });
   }
 });

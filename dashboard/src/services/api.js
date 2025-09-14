@@ -256,6 +256,31 @@ export const dashboardService = {
     }
   },
 
+  // Conversas: obter histórico por telefone
+  getConversa: async (phone, limit = 200, before, after) => {
+    try {
+      const params = { phone, limit };
+      if (before) params.before = before;
+      if (after) params.after = after;
+      const response = await api.get('/painel/conversa', { params });
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao carregar conversa:', error);
+      throw error;
+    }
+  },
+
+  // Enviar mensagem manual via WhatsApp
+  enviarMensagemWhatsApp: async (phone, message) => {
+    try {
+      const response = await api.post('/painel/mensagens/whatsapp', { phone, message });
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao enviar mensagem WhatsApp:', error);
+      throw error;
+    }
+  },
+
   // Estatísticas detalhadas
   getEstatisticasDetalhadas: async (fromIso, toIso) => {
     try {

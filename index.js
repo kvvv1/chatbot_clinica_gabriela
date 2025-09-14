@@ -53,7 +53,8 @@ app.post('/webhook', webhookLimiter, async (req, res) => {
     const data = req.body;
 
     // 🔍 Coleta segura do telefone
-    const userPhone = data.from || data.phone || data.phoneNumber;
+    const userPhoneRaw = data.from || data.phone || data.phoneNumber;
+    const userPhone = userPhoneRaw ? String(userPhoneRaw).replace(/\D/g, '') : undefined;
 
     /**
      * 🛡️ Coleta segura da mensagem:
@@ -131,15 +132,33 @@ app.post('/webhook', webhookLimiter, async (req, res) => {
     // Envia a resposta via Z-API
     await zapiService.sendMessage(userPhone, resposta);
 
-    // Log saída (somente se habilitado)
-    if (LOG_MESSAGES === 'all') {
-      try {
-        if (supabase && userPhone && resposta) {
+    // Log saída: grava sempre, com proteção simples contra duplicidade imediata
+    try {
+      if (supabase && userPhone && resposta) {
+        // Verifica a última mensagem de saída para evitar duplicar imediatamente
+        const { data: lastRows } = await supabase
+          .from('messages')
+          .select('id, content, created_at')
+          .eq('phone', userPhone)
+          .eq('direction', 'out')
+          .order('created_at', { ascending: false })
+          .limit(1);
+        const last = Array.isArray(lastRows) && lastRows.length > 0 ? lastRows[0] : null;
+        let shouldInsert = true;
+        if (last) {
+          const sameContent = (last.content || '') === resposta;
+          const lastTs = new Date(last.created_at).getTime();
+          const nowTs = Date.now();
+          if (sameContent && (nowTs - lastTs) < 3000) {
+            shouldInsert = false;
+          }
+        }
+        if (shouldInsert) {
           await supabase.from('messages').insert({ phone: userPhone, direction: 'out', content: resposta });
         }
-      } catch (e) {
-        console.warn('[Supabase] Falha ao logar mensagem de saída:', e.message);
       }
+    } catch (e) {
+      console.warn('[Supabase] Falha ao logar mensagem de saída:', e.message);
     }
 
     res.status(200).send('Mensagem processada com sucesso');
