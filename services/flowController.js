@@ -362,21 +362,11 @@ async function buscarHorariosDisponiveis(token, dataSelecionada) {
       return null;
     }
 
-    const horaParaNumero = (hora) => {
-      const [h, m] = String(hora).split(':').map(Number);
-      return h + (isNaN(m) ? 0 : m) / 60;
-    };
-
-    horarios = horarios.filter(horario => {
-      const horaNum = horaParaNumero(horario?.hora_inicio || horario);
-
-      const dentroDoHorario =
-        !(horaNum >= 8 && horaNum < 9) &&
-        !(horaNum >= 13.5 && horaNum < 14) &&
-        horaNum < 17;
-
-      return dentroDoHorario;
-    }).map(horario => (typeof horario === 'string' ? horario : (horario.hora_inicio || horario)));
+    // Normaliza para uma lista de strings sem aplicar restrições adicionais
+    horarios = horarios.map((horario) => {
+      if (typeof horario === 'string') return horario;
+      return horario.hora_inicio || horario.hora || String(horario);
+    });
 
     return horarios;
   } catch (error) {
@@ -940,8 +930,8 @@ async function handleAguardandoCpf(phone, message) {
           })
         : diasAll;
 
-      // mantém apenas dias com horários disponíveis (sem fallback)
-      let diasComHorario = await filtrarDiasComHorarios(dias, context.token);
+      // mantém apenas dias com "disponivel" true (sem pré-checar horários)
+      let diasComHorario = dias;
 
       if (!diasComHorario || diasComHorario.length === 0) {
         return (
@@ -1303,8 +1293,8 @@ async function handleConfirmandoPaciente(phone, message) {
                 })
               : diasAll;
 
-            // mantém apenas dias com horários disponíveis (sem fallback)
-            let diasComHorario = await filtrarDiasComHorarios(dias, context.token);
+            // mantém apenas dias com "disponivel" true (sem pré-checar horários)
+            let diasComHorario = dias;
 
             if (!diasComHorario || diasComHorario.length === 0) {
               return (
@@ -1567,8 +1557,8 @@ async function handleEscolhendoData(phone, message) {
         return ma && prox && ma.mes === prox.mes && ma.ano === prox.ano;
       }) : diasAll;
 
-      // mantém apenas dias com horários disponíveis
-      dias = await filtrarDiasComHorarios(dias, context.token);
+      // mantém apenas dias com "disponivel" true
+      // (pré-filtrado anteriormente; mantém como está)
 
       if (!dias || dias.length === 0) {
         return (
