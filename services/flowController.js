@@ -973,8 +973,15 @@ async function handleAguardandoCpf(phone, message) {
         : diasAll;
 
       // mantém apenas dias com "disponivel" true (sem pré-checar horários)
-      // mantém apenas dias permitidos pelo expediente (sem consultar horários ainda)
-      let diasComHorario = dias.filter((d) => getExpedienteRangesForDateBR(d.data).length > 0);
+      // mantém apenas dias que realmente possuem horários dentro do expediente
+      let diasComHorario = [];
+      for (const d of dias) {
+        try {
+          const horariosDia = await buscarHorariosDisponiveis(context.token, d.data);
+          const ok = filterHorariosPorExpediente(d.data, Array.isArray(horariosDia) ? horariosDia : []);
+          if (ok.length > 0) diasComHorario.push(d);
+        } catch {}
+      }
 
       if (!diasComHorario || diasComHorario.length === 0) {
         return (
@@ -1337,7 +1344,14 @@ async function handleConfirmandoPaciente(phone, message) {
               : diasAll;
 
             // mantém apenas dias com "disponivel" true (sem pré-checar horários)
-            let diasComHorario = dias.filter((d) => getExpedienteRangesForDateBR(d.data).length > 0);
+            let diasComHorario = [];
+            for (const d of dias) {
+              try {
+                const horariosDia = await buscarHorariosDisponiveis(context.token, d.data);
+                const ok = filterHorariosPorExpediente(d.data, Array.isArray(horariosDia) ? horariosDia : []);
+                if (ok.length > 0) diasComHorario.push(d);
+              } catch {}
+            }
 
             if (!diasComHorario || diasComHorario.length === 0) {
               return (
