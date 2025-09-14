@@ -985,11 +985,15 @@ async function handleAguardandoCpf(phone, message) {
       // mantém apenas dias com "disponivel" true (sem pré-checar horários)
       // mantém apenas dias que realmente possuem horários dentro do expediente
       let diasComHorario = [];
+      const horariosPorData = {};
       for (const d of dias) {
         try {
           const horariosDia = await buscarHorariosDisponiveis(context.token, d.data);
           const ok = filterHorariosPorExpediente(d.data, Array.isArray(horariosDia) ? horariosDia : []);
-          if (ok.length > 0) diasComHorario.push(d);
+          if (ok.length > 0) {
+            diasComHorario.push(d);
+            horariosPorData[d.data] = ok;
+          }
         } catch {}
       }
 
@@ -1006,11 +1010,12 @@ async function handleAguardandoCpf(phone, message) {
           : diasAllProx;
 
         let diasComHorarioProx = [];
+        const horariosPorDataProx = {};
         for (const d of diasProx) {
           try {
             const horariosDia = await buscarHorariosDisponiveis(context.token, d.data);
             const ok = filterHorariosPorExpediente(d.data, Array.isArray(horariosDia) ? horariosDia : []);
-            if (ok.length > 0) diasComHorarioProx.push(d);
+            if (ok.length > 0) { diasComHorarioProx.push(d); horariosPorDataProx[d.data] = ok; }
           } catch {}
         }
 
@@ -1032,7 +1037,7 @@ async function handleAguardandoCpf(phone, message) {
         msgDatas2 += "\n\nDigite o número da opção desejada.";
 
         context.datasDisponiveis = diasComHorarioProx;
-        context.horariosPorData = {}; // limpa cache
+        context.horariosPorData = horariosPorDataProx;
         const ref = getMesAnoDeDataBR(inicioProxMes);
         context.mesListando = `${String(ref.mes).padStart(2,'0')}/${ref.ano}`;
         setContext(phone, context);
@@ -1053,7 +1058,7 @@ async function handleAguardandoCpf(phone, message) {
       msgDatas += "\n\nDigite o número da opção desejada.";
 
       context.datasDisponiveis = diasComHorario;
-      context.horariosPorData = {}; // limpa cache
+      context.horariosPorData = horariosPorData;
       context.mesListando = `${mes}/${ano}`;
       setContext(phone, context);
 
