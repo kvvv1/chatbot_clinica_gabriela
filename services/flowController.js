@@ -235,11 +235,11 @@ function obterSaudacao() {
   const hora = agora.getHours();
   
   if (hora >= 6 && hora < 12) {
-    return "🌅 Bom dia! Bem-vindo(a) à Clínica Nassif! 🏥";
+    return "🌅 Bom dia! Bem-vindo(a) à Clínica Dra. Gabriela Nassif! 🏥";
   } else if (hora >= 12 && hora < 18) {
-    return "☀️ Boa tarde! Bem-vindo(a) à Clínica Nassif! 🏥";
+    return "☀️ Boa tarde! Bem-vindo(a) à Clínica Dra. Gabriela Nassif! 🏥";
   } else {
-    return "🌙 Boa noite! Bem-vindo(a) à Clínica Nassif! 🏥";
+    return "🌙 Boa noite! Bem-vindo(a) à Clínica Dra. Gabriela Nassif! 🏥";
   }
 }
 
@@ -682,7 +682,7 @@ function handleInicio(phone, message) {
 
     const resposta = (
       obterSaudacao() + "\n\n" +
-      "Sou seu assistente virtual. Como posso ajudar?\n\n" +
+      "Sou seu assistente virtual.\n\n" +
       "*Digite o número da opção desejada:*\n\n" +
       "1️⃣ *Agendar consulta*\n" +
       "2️⃣ *Ver meus agendamentos*\n" +
@@ -724,7 +724,7 @@ function handleMenuPrincipal(phone, message) {
     case 'menu':
       return (
         obterSaudacao() + "\n\n" +
-        "Sou seu assistente virtual. Como posso ajudar?\n\n" +
+        "Sou seu assistente virtual.\n\n" +
         "*Digite o número da opção desejada:*\n\n" +
         "1️⃣ Agendar consulta\n" +
         "2️⃣ Ver meus agendamentos\n" +
@@ -1697,7 +1697,7 @@ async function flowController(message, phone) {
       return (
         "🔙 *Retornando ao menu principal...*\n\n" +
         obterSaudacao() + "\n\n" +
-        "Sou seu assistente virtual. Como posso ajudar?\n\n" +
+        "Sou seu assistente virtual.\n\n" +
         "*Digite o número da opção desejada:*\n\n" +
         "1️⃣ *Agendar consulta*\n" +
         "2️⃣ *Ver meus agendamentos*\n" +
