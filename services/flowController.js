@@ -231,15 +231,15 @@ function getMesAnoDeDataBR(dataBR) {
 function getExpedienteRangesByWeekday(weekday) {
   switch (weekday) {
     case 1: // Segunda
-      return [[9*60, 11*60+40], [14*60, 16*60+40]];
+      return [[9*60, 11*60+40], [14*60, 17*60]];
     case 2: // Terça
       return [];
     case 3: // Quarta
-      return [[9*60, 11*60+40], [14*60, 16*60+40]];
+      return [[9*60, 11*60+40], [14*60, 17*60]];
     case 4: // Quinta
-      return [[14*60, 16*60+40]];
+      return [[14*60, 17*60]];
     case 5: // Sexta
-      return [[14*60, 16*60+40]];
+      return [[14*60, 17*60]];
     default:
       return [];
   }
@@ -252,7 +252,11 @@ function getExpedienteRangesForDateBR(dateBR) {
 }
 
 function parseTimeToMinutes(hhmm) {
-  const [h, m] = String(hhmm).split(':').map(Number);
+  const s = String(hhmm || '').trim();
+  const match = s.match(/(\d{1,2}):(\d{2})/);
+  if (!match) return null;
+  const h = Number(match[1]);
+  const m = Number(match[2]);
   if (Number.isNaN(h) || Number.isNaN(m)) return null;
   return h*60 + m;
 }
@@ -262,10 +266,15 @@ function filterHorariosPorExpediente(dateBR, horarios) {
   if (!Array.isArray(horarios) || horarios.length === 0) return [];
   if (!ranges.length) return [];
   return horarios.filter((h) => {
-    const minutes = parseTimeToMinutes(typeof h === 'string' ? h : (h?.hora_inicio || h?.hora));
+    const startStr = typeof h === 'string' ? h : (h?.hora_inicio || h?.hora || h?.inicio);
+    const minutes = parseTimeToMinutes(startStr);
     if (minutes == null) return false;
     return ranges.some(([ini, fim]) => minutes >= ini && minutes <= fim);
-  }).map((h) => typeof h === 'string' ? h : (h?.hora_inicio || h?.hora));
+  }).map((h) => {
+    if (typeof h === 'string') return h;
+    if (h?.hora_inicio && h?.hora_fim) return `${h.hora_inicio}-${h.hora_fim}`;
+    return h?.hora_inicio || h?.hora || String(h);
+  });
 }
 
 function primeiroDiaDoProximoMes(mes, ano) {
@@ -407,6 +416,7 @@ async function buscarHorariosDisponiveis(token, dataSelecionada) {
     // Normaliza para uma lista de strings sem aplicar restrições adicionais
     horarios = horarios.map((horario) => {
       if (typeof horario === 'string') return horario;
+      if (horario?.hora_inicio && horario?.hora_fim) return `${horario.hora_inicio}-${horario.hora_fim}`;
       return horario.hora_inicio || horario.hora || String(horario);
     });
 
