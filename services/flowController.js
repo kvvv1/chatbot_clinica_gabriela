@@ -181,6 +181,17 @@ async function insertCancelRequest({ phone, agendamento_token, motivo, status })
   }
 }
 
+// 🔢 Conversão de números para emojis (1️⃣, 2️⃣, ...)
+function numeroParaEmoji(numero) {
+  const mapa = {
+    0: '0️⃣', 1: '1️⃣', 2: '2️⃣', 3: '3️⃣', 4: '4️⃣', 5: '5️⃣',
+    6: '6️⃣', 7: '7️⃣', 8: '8️⃣', 9: '9️⃣', 10: '🔟'
+  };
+  if (mapa[numero] !== undefined) return mapa[numero];
+  // Para números > 10, compõe caractere a caractere
+  return String(numero).split('').map(d => mapa[parseInt(d, 10)] || d).join('');
+}
+
 function calcularDataFimAgendamento(dataString, horaString) {
   const [dia, mes, ano] = dataString.split('/');
   const [hora, minuto] = horaString.split(':');
@@ -856,6 +867,8 @@ async function handleAguardandoCpf(phone, message) {
         setContext(phone, context);
       }
 
+      // Permite paginação: usa context.paginaDatas (0-based)
+      const pagina = Number.isInteger(context.paginaDatas) ? context.paginaDatas : 0;
       const dias = await buscarDatasDisponiveis(context.token);
 
       if (!dias || dias.length === 0) {
@@ -867,11 +880,12 @@ async function handleAguardandoCpf(phone, message) {
 
       const msgConfirmacao = `✅ *CPF ${message} encontrado no sistema!*`;
 
-      let msgDatas = "📅 *Datas disponíveis para consulta:*\n\n";
+      let msgDatas = "📅 *Datas mais próximas disponíveis para consulta:*\n\n";
       dias.forEach((data, index) => {
-        msgDatas += `*${index + 1}* - ${data.data}\n`;
+        const numEmoji = numeroParaEmoji(index + 1);
+        msgDatas += `${numEmoji} - ${data.data}\n`;
       });
-      msgDatas += "\nDigite o número da data desejada:";
+      msgDatas += "\nDigite o número da data desejada.\n\nDigite *mais* para ver datas mais pra frente.";
 
       context.datasDisponiveis = dias;
       setContext(phone, context);
@@ -1209,13 +1223,14 @@ async function handleConfirmandoPaciente(phone, message) {
               );
             }
 
-            // Monta a lista de opções
-            let mensagem = "📅 *Datas disponíveis para consulta:*\n\n";
+            // Monta a lista de opções (com emojis e opção de mais)
+            let mensagem = "📅 *Datas mais próximas disponíveis para consulta:*\n\n";
             dias.forEach((data, index) => {
-              mensagem += `*${index + 1}* - ${data.data}\n`;
+              const numEmoji = numeroParaEmoji(index + 1);
+              mensagem += `${numEmoji} - ${data.data}\n`;
             });
 
-            mensagem += "\nDigite o número da data desejada:";
+            mensagem += "\nDigite o número da data desejada.\n\nDigite *mais* para ver datas mais pra frente.";
 
             // Salva as opções no contexto para uso posterior
             context.datasDisponiveis = dias;
@@ -1440,6 +1455,41 @@ async function handleConfirmandoAgendamento(phone, message) {
 // 📅 Escolhendo data
 async function handleEscolhendoData(phone, message) {
   const context = getContext(phone);
+  const messageLower = (message || '').toLowerCase().trim();
+  if (messageLower === 'mais') {
+    try {
+      // avança a página (marcador lógico)
+      const paginaAtual = Number.isInteger(context.paginaDatas) ? context.paginaDatas : 0;
+      context.paginaDatas = paginaAtual + 1;
+      setContext(phone, context);
+
+      const dias = await buscarDatasDisponiveis(context.token);
+      if (!dias || dias.length === 0) {
+        return (
+          "❌ Não há mais datas disponíveis no momento.\n\n" +
+          "Digite *menu* para voltar ao início ou escolha uma das datas já listadas."
+        );
+      }
+
+      let msgDatas = "📅 *Mais datas disponíveis para consulta:*\n\n";
+      dias.forEach((data, index) => {
+        const numEmoji = numeroParaEmoji(index + 1);
+        msgDatas += `${numEmoji} - ${data.data}\n`;
+      });
+      msgDatas += "\nDigite o número da data desejada.\n\nDigite *mais* para ver ainda mais datas.";
+
+      context.datasDisponiveis = dias;
+      setContext(phone, context);
+      return msgDatas;
+    } catch (error) {
+      console.error('Erro ao paginar datas:', error);
+      return (
+        "❌ Ocorreu um erro ao buscar mais datas.\n" +
+        "Tente novamente mais tarde ou digite *menu* para voltar ao início."
+      );
+    }
+  }
+
   const opcao = parseInt(message);
 
   if (!context.datasDisponiveis || isNaN(opcao) || opcao < 1 || opcao > context.datasDisponiveis.length) {
