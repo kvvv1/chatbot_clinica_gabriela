@@ -192,6 +192,9 @@ function numeroParaEmoji(numero) {
   return String(numero).split('').map(d => mapa[parseInt(d, 10)] || d).join('');
 }
 
+// 🔧 Tamanho da página para listar datas
+const PAGE_SIZE_DATAS = 7;
+
 function calcularDataFimAgendamento(dataString, horaString) {
   const [dia, mes, ano] = dataString.split('/');
   const [hora, minuto] = horaString.split(':');
@@ -867,9 +870,10 @@ async function handleAguardandoCpf(phone, message) {
         setContext(phone, context);
       }
 
-      // Permite paginação: usa context.paginaDatas (0-based)
+      // Busca todas as datas e pagina localmente
       const pagina = Number.isInteger(context.paginaDatas) ? context.paginaDatas : 0;
-      const dias = await buscarDatasDisponiveis(context.token);
+      const diasAll = await buscarDiasDisponiveis(context.token);
+      const dias = Array.isArray(diasAll) ? diasAll.slice(pagina * PAGE_SIZE_DATAS, (pagina + 1) * PAGE_SIZE_DATAS) : diasAll;
 
       if (!dias || dias.length === 0) {
         return (
@@ -888,6 +892,8 @@ async function handleAguardandoCpf(phone, message) {
       msgDatas += "\nDigite o número da data desejada.\n\nDigite *mais* para ver datas mais pra frente.";
 
       context.datasDisponiveis = dias;
+      context.totalDatasDisponiveis = Array.isArray(diasAll) ? diasAll.length : (dias?.length || 0);
+      context.paginaDatas = pagina;
       setContext(phone, context);
 
       return [msgConfirmacao, msgDatas];
@@ -1213,8 +1219,10 @@ async function handleConfirmandoPaciente(phone, message) {
               setContext(phone, context);
             }
 
-            // Consulta à API oficial usando função segura
-            const dias = await buscarDatasDisponiveis(context.token);
+            // Consulta todas as datas e pagina localmente
+            const pagina = Number.isInteger(context.paginaDatas) ? context.paginaDatas : 0;
+            const diasAll = await buscarDiasDisponiveis(context.token);
+            const dias = Array.isArray(diasAll) ? diasAll.slice(pagina * PAGE_SIZE_DATAS, (pagina + 1) * PAGE_SIZE_DATAS) : diasAll;
 
             if (!dias || dias.length === 0) {
               return (
@@ -1234,6 +1242,8 @@ async function handleConfirmandoPaciente(phone, message) {
 
             // Salva as opções no contexto para uso posterior
             context.datasDisponiveis = dias;
+            context.totalDatasDisponiveis = Array.isArray(diasAll) ? diasAll.length : (dias?.length || 0);
+            context.paginaDatas = pagina;
             setContext(phone, context);
 
             return mensagem;
@@ -1460,10 +1470,10 @@ async function handleEscolhendoData(phone, message) {
     try {
       // avança a página (marcador lógico)
       const paginaAtual = Number.isInteger(context.paginaDatas) ? context.paginaDatas : 0;
-      context.paginaDatas = paginaAtual + 1;
-      setContext(phone, context);
+      const diasAll = await buscarDiasDisponiveis(context.token);
+      const proximaPagina = paginaAtual + 1;
+      const dias = Array.isArray(diasAll) ? diasAll.slice(proximaPagina * PAGE_SIZE_DATAS, (proximaPagina + 1) * PAGE_SIZE_DATAS) : diasAll;
 
-      const dias = await buscarDatasDisponiveis(context.token);
       if (!dias || dias.length === 0) {
         return (
           "❌ Não há mais datas disponíveis no momento.\n\n" +
@@ -1478,7 +1488,9 @@ async function handleEscolhendoData(phone, message) {
       });
       msgDatas += "\nDigite o número da data desejada.\n\nDigite *mais* para ver ainda mais datas.";
 
+      context.paginaDatas = proximaPagina;
       context.datasDisponiveis = dias;
+      context.totalDatasDisponiveis = Array.isArray(diasAll) ? diasAll.length : (dias?.length || 0);
       setContext(phone, context);
       return msgDatas;
     } catch (error) {
