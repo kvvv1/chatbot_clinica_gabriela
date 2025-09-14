@@ -990,11 +990,14 @@ async function handleAguardandoCpf(phone, message) {
         try {
           const horariosDia = await buscarHorariosDisponiveis(context.token, d.data);
           const ok = filterHorariosPorExpediente(d.data, Array.isArray(horariosDia) ? horariosDia : []);
+          console.log('[Datas-init] dia', d.data, 'rawHorarios:', Array.isArray(horariosDia) ? horariosDia.length : 0, 'aposFiltro:', ok.length);
           if (ok.length > 0) {
             diasComHorario.push(d);
             horariosPorData[d.data] = ok;
           }
-        } catch {}
+        } catch (e) {
+          console.warn('[Datas-init] erro horarios em', d.data, e.message);
+        }
       }
 
       if (!diasComHorario || diasComHorario.length === 0) {
@@ -1015,8 +1018,9 @@ async function handleAguardandoCpf(phone, message) {
           try {
             const horariosDia = await buscarHorariosDisponiveis(context.token, d.data);
             const ok = filterHorariosPorExpediente(d.data, Array.isArray(horariosDia) ? horariosDia : []);
+            console.log('[Datas-prox] dia', d.data, 'rawHorarios:', Array.isArray(horariosDia) ? horariosDia.length : 0, 'aposFiltro:', ok.length);
             if (ok.length > 0) { diasComHorarioProx.push(d); horariosPorDataProx[d.data] = ok; }
-          } catch {}
+          } catch (e) { console.warn('[Datas-prox] erro horarios em', d.data, e.message); }
         }
 
         if (!diasComHorarioProx || diasComHorarioProx.length === 0) {
