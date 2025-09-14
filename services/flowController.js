@@ -984,10 +984,49 @@ async function handleAguardandoCpf(phone, message) {
       }
 
       if (!diasComHorario || diasComHorario.length === 0) {
-        return (
-          "❌ Nenhuma data disponível no momento.\n\n" +
-          "Tente novamente mais tarde ou digite *'Menu'* para voltar ao início."
-        );
+        // Fallback: tentar automaticamente o próximo mês
+        const inicioProxMes = primeiroDiaDoProximoMes(Number(mes), Number(ano));
+        const diasAllProx = await buscarDatasDisponiveis(context.token, inicioProxMes);
+        let diasProx = Array.isArray(diasAllProx)
+          ? diasAllProx.filter((d) => {
+              const ma = getMesAnoDeDataBR(d.data);
+              const ref = getMesAnoDeDataBR(inicioProxMes);
+              return ma && ref && ma.mes === ref.mes && ma.ano === ref.ano;
+            })
+          : diasAllProx;
+
+        let diasComHorarioProx = [];
+        for (const d of diasProx) {
+          try {
+            const horariosDia = await buscarHorariosDisponiveis(context.token, d.data);
+            const ok = filterHorariosPorExpediente(d.data, Array.isArray(horariosDia) ? horariosDia : []);
+            if (ok.length > 0) diasComHorarioProx.push(d);
+          } catch {}
+        }
+
+        if (!diasComHorarioProx || diasComHorarioProx.length === 0) {
+          return (
+            "❌ Nenhuma data disponível no momento.\n\n" +
+            "Tente novamente mais tarde ou digite *'Menu'* para voltar ao início."
+          );
+        }
+
+        const msgConfirmacao2 = `✅ *CPF ${message} encontrado no sistema!*`;
+        let msgDatas2 = "📅 *Datas mais próximas disponíveis para consulta:*\n\n";
+        diasComHorarioProx.forEach((data, index) => {
+          const numEmoji = numeroParaEmoji(index + 1);
+          msgDatas2 += `${numEmoji} - ${data.data}\n`;
+        });
+        const numMais2 = numeroParaEmoji(diasComHorarioProx.length + 1);
+        msgDatas2 += `\n${numMais2} - VER MAIS DATAS`;
+        msgDatas2 += "\n\nDigite o número da opção desejada.";
+
+        context.datasDisponiveis = diasComHorarioProx;
+        const ref = getMesAnoDeDataBR(inicioProxMes);
+        context.mesListando = `${String(ref.mes).padStart(2,'0')}/${ref.ano}`;
+        setContext(phone, context);
+
+        return [msgConfirmacao2, msgDatas2];
       }
 
       const msgConfirmacao = `✅ *CPF ${message} encontrado no sistema!*`;
