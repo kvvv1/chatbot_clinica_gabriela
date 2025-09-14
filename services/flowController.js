@@ -195,6 +195,45 @@ function numeroParaEmoji(numero) {
 // 🔧 Tamanho da página para listar datas
 const PAGE_SIZE_DATAS = 7;
 
+// 📅 Soma 1 dia a uma data BR (DD/MM/AAAA)
+function adicionarUmDiaDataBR(dataBR) {
+  try {
+    if (!dataBR) return undefined;
+    const [d, m, a] = String(dataBR).split('/').map(Number);
+    if (!d || !m || !a) return undefined;
+    const dt = new Date(a, m - 1, d);
+    dt.setDate(dt.getDate() + 1);
+    const dd = String(dt.getDate()).padStart(2, '0');
+    const mm = String(dt.getMonth() + 1).padStart(2, '0');
+    const yyyy = String(dt.getFullYear());
+    return `${dd}/${mm}/${yyyy}`;
+  } catch {
+    return undefined;
+  }
+}
+
+// 🗓️ Utilitários de data BR
+function parseDataBR(dataBR) {
+  if (!dataBR) return null;
+  const [d, m, a] = String(dataBR).split('/').map(Number);
+  if (!d || !m || !a) return null;
+  return new Date(a, m - 1, d);
+}
+
+function getMesAnoDeDataBR(dataBR) {
+  const dt = parseDataBR(dataBR);
+  if (!dt) return null;
+  return { mes: dt.getMonth() + 1, ano: dt.getFullYear() };
+}
+
+function primeiroDiaDoProximoMes(mes, ano) {
+  const base = new Date(ano, mes - 1, 1);
+  base.setMonth(base.getMonth() + 1);
+  const mm = String(base.getMonth() + 1).padStart(2, '0');
+  const yyyy = String(base.getFullYear());
+  return `01/${mm}/${yyyy}`;
+}
+
 function calcularDataFimAgendamento(dataString, horaString) {
   const [dia, mes, ano] = dataString.split('/');
   const [hora, minuto] = horaString.split(':');
@@ -298,7 +337,7 @@ async function buscarDatasDisponiveis(token, dataInicial) {
       return null;
     }
 
-    const diasDisponiveis = dias.filter(d => d.disponivel !== false);
+    const diasDisponiveis = dias.filter(d => d.disponivel === true);
 
     return diasDisponiveis;
   } catch (error) {
@@ -870,10 +909,19 @@ async function handleAguardandoCpf(phone, message) {
         setContext(phone, context);
       }
 
-      // Busca todas as datas e pagina localmente
-      const pagina = Number.isInteger(context.paginaDatas) ? context.paginaDatas : 0;
-      const diasAll = await buscarDatasDisponiveis(context.token, undefined);
-      const dias = Array.isArray(diasAll) ? diasAll.slice(pagina * PAGE_SIZE_DATAS, (pagina + 1) * PAGE_SIZE_DATAS) : diasAll;
+      // Primeira listagem: somente dias disponíveis do mês corrente
+      const hoje = new Date();
+      const dia = String(hoje.getDate()).padStart(2, '0');
+      const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+      const ano = String(hoje.getFullYear());
+      const dataInicial = `${dia}/${mes}/${ano}`;
+      const diasAll = await buscarDatasDisponiveis(context.token, dataInicial);
+      const dias = Array.isArray(diasAll)
+        ? diasAll.filter((d) => {
+            const ma = getMesAnoDeDataBR(d.data);
+            return ma && ma.mes === (hoje.getMonth() + 1) && ma.ano === hoje.getFullYear();
+          })
+        : diasAll;
 
       if (!dias || dias.length === 0) {
         return (
@@ -892,8 +940,7 @@ async function handleAguardandoCpf(phone, message) {
       msgDatas += "\nDigite o número da data desejada.\n\nDigite *mais* para ver datas mais pra frente.";
 
       context.datasDisponiveis = dias;
-      context.totalDatasDisponiveis = Array.isArray(diasAll) ? diasAll.length : (dias?.length || 0);
-      context.paginaDatas = pagina;
+      context.mesListando = `${mes}/${ano}`;
       setContext(phone, context);
 
       return [msgConfirmacao, msgDatas];
@@ -1219,10 +1266,19 @@ async function handleConfirmandoPaciente(phone, message) {
               setContext(phone, context);
             }
 
-            // Consulta todas as datas e pagina localmente
-            const pagina = Number.isInteger(context.paginaDatas) ? context.paginaDatas : 0;
-            const diasAll = await buscarDatasDisponiveis(context.token, undefined);
-            const dias = Array.isArray(diasAll) ? diasAll.slice(pagina * PAGE_SIZE_DATAS, (pagina + 1) * PAGE_SIZE_DATAS) : diasAll;
+            // Primeira listagem dentro do fluxo 'agendar': mês corrente
+            const hoje = new Date();
+            const dia = String(hoje.getDate()).padStart(2, '0');
+            const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+            const ano = String(hoje.getFullYear());
+            const dataInicial = `${dia}/${mes}/${ano}`;
+            const diasAll = await buscarDatasDisponiveis(context.token, dataInicial);
+            const dias = Array.isArray(diasAll)
+              ? diasAll.filter((d) => {
+                  const ma = getMesAnoDeDataBR(d.data);
+                  return ma && ma.mes === (hoje.getMonth() + 1) && ma.ano === hoje.getFullYear();
+                })
+              : diasAll;
 
             if (!dias || dias.length === 0) {
               return (
@@ -1242,8 +1298,7 @@ async function handleConfirmandoPaciente(phone, message) {
 
             // Salva as opções no contexto para uso posterior
             context.datasDisponiveis = dias;
-            context.totalDatasDisponiveis = Array.isArray(diasAll) ? diasAll.length : (dias?.length || 0);
-            context.paginaDatas = pagina;
+            context.mesListando = `${mes}/${ano}`;
             setContext(phone, context);
 
             return mensagem;
@@ -1468,14 +1523,21 @@ async function handleEscolhendoData(phone, message) {
   const messageLower = (message || '').toLowerCase().trim();
   if (messageLower === 'mais') {
     try {
-      // avança a página (marcador lógico)
-      const paginaAtual = Number.isInteger(context.paginaDatas) ? context.paginaDatas : 0;
-      const ultimaData = Array.isArray(context.datasDisponiveis) && context.datasDisponiveis.length > 0
+      // Próximo mês: baseia-se no último dia listado ou no mês atual
+      let base = Array.isArray(context.datasDisponiveis) && context.datasDisponiveis.length > 0
         ? context.datasDisponiveis[context.datasDisponiveis.length - 1].data
-        : undefined;
-      const diasAll = await buscarDatasDisponiveis(context.token, ultimaData);
-      const proximaPagina = paginaAtual + 1;
-      const dias = Array.isArray(diasAll) ? diasAll.slice(proximaPagina * PAGE_SIZE_DATAS, (proximaPagina + 1) * PAGE_SIZE_DATAS) : diasAll;
+        : null;
+      const ref = base ? getMesAnoDeDataBR(base) : getMesAnoDeDataBR((() => {
+        const h = new Date();
+        return `${String(h.getDate()).padStart(2,'0')}/${String(h.getMonth()+1).padStart(2,'0')}/${h.getFullYear()}`;
+      })());
+      const dataInicioProxMes = primeiroDiaDoProximoMes(ref.mes, ref.ano);
+      const diasAll = await buscarDatasDisponiveis(context.token, dataInicioProxMes);
+      const dias = Array.isArray(diasAll) ? diasAll.filter((d) => {
+        const ma = getMesAnoDeDataBR(d.data);
+        const prox = getMesAnoDeDataBR(dataInicioProxMes);
+        return ma && prox && ma.mes === prox.mes && ma.ano === prox.ano;
+      }) : diasAll;
 
       if (!dias || dias.length === 0) {
         return (
@@ -1491,9 +1553,9 @@ async function handleEscolhendoData(phone, message) {
       });
       msgDatas += "\nDigite o número da data desejada.\n\nDigite *mais* para ver ainda mais datas.";
 
-      context.paginaDatas = proximaPagina;
+      const prox = getMesAnoDeDataBR(dataInicioProxMes);
       context.datasDisponiveis = dias;
-      context.totalDatasDisponiveis = Array.isArray(diasAll) ? diasAll.length : (dias?.length || 0);
+      context.mesListando = `${String(prox.mes).padStart(2,'0')}/${prox.ano}`;
       setContext(phone, context);
       return msgDatas;
     } catch (error) {
