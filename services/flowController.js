@@ -226,6 +226,48 @@ function getMesAnoDeDataBR(dataBR) {
   return { mes: dt.getMonth() + 1, ano: dt.getFullYear() };
 }
 
+// 🕒 Regras de expediente por dia da semana (0=Dom, 1=Seg, ...)
+// Cada intervalo é [inicioMin, fimMin] em minutos desde 00:00
+function getExpedienteRangesByWeekday(weekday) {
+  switch (weekday) {
+    case 1: // Segunda
+      return [[9*60, 11*60+40], [14*60, 16*60+40]];
+    case 2: // Terça
+      return [];
+    case 3: // Quarta
+      return [[9*60, 11*60+40], [14*60, 16*60+40]];
+    case 4: // Quinta
+      return [[14*60, 16*60+40]];
+    case 5: // Sexta
+      return [[14*60, 16*60+40]];
+    default:
+      return [];
+  }
+}
+
+function getExpedienteRangesForDateBR(dateBR) {
+  const dt = parseDataBR(dateBR);
+  if (!dt) return [];
+  return getExpedienteRangesByWeekday(dt.getDay());
+}
+
+function parseTimeToMinutes(hhmm) {
+  const [h, m] = String(hhmm).split(':').map(Number);
+  if (Number.isNaN(h) || Number.isNaN(m)) return null;
+  return h*60 + m;
+}
+
+function filterHorariosPorExpediente(dateBR, horarios) {
+  const ranges = getExpedienteRangesForDateBR(dateBR);
+  if (!Array.isArray(horarios) || horarios.length === 0) return [];
+  if (!ranges.length) return [];
+  return horarios.filter((h) => {
+    const minutes = parseTimeToMinutes(typeof h === 'string' ? h : (h?.hora_inicio || h?.hora));
+    if (minutes == null) return false;
+    return ranges.some(([ini, fim]) => minutes >= ini && minutes <= fim);
+  }).map((h) => typeof h === 'string' ? h : (h?.hora_inicio || h?.hora));
+}
+
 function primeiroDiaDoProximoMes(mes, ano) {
   const base = new Date(ano, mes - 1, 1);
   base.setMonth(base.getMonth() + 1);
@@ -931,7 +973,13 @@ async function handleAguardandoCpf(phone, message) {
         : diasAll;
 
       // mantém apenas dias com "disponivel" true (sem pré-checar horários)
-      let diasComHorario = dias;
+      // mantém apenas dias cujos horários atendam às regras de expediente
+      let diasComHorario = [];
+      for (const d of dias) {
+        const horarios = await buscarHorariosDisponiveis(context.token, d.data);
+        const filtrados = filterHorariosPorExpediente(d.data, Array.isArray(horarios) ? horarios : []);
+        if (filtrados.length > 0) diasComHorario.push(d);
+      }
 
       if (!diasComHorario || diasComHorario.length === 0) {
         return (
@@ -1294,7 +1342,12 @@ async function handleConfirmandoPaciente(phone, message) {
               : diasAll;
 
             // mantém apenas dias com "disponivel" true (sem pré-checar horários)
-            let diasComHorario = dias;
+            let diasComHorario = [];
+            for (const d of dias) {
+              const horarios = await buscarHorariosDisponiveis(context.token, d.data);
+              const filtrados = filterHorariosPorExpediente(d.data, Array.isArray(horarios) ? horarios : []);
+              if (filtrados.length > 0) diasComHorario.push(d);
+            }
 
             if (!diasComHorario || diasComHorario.length === 0) {
               return (
@@ -1609,11 +1662,12 @@ async function handleEscolhendoData(phone, message) {
 
   try {
     // Consulta à API oficial usando função segura
-    const horarios = await buscarHorariosDisponiveis(context.token, dataSelecionada);
+    let horarios = await buscarHorariosDisponiveis(context.token, dataSelecionada);
+    horarios = filterHorariosPorExpediente(dataSelecionada, Array.isArray(horarios) ? horarios : []);
 
     if (!horarios || horarios.length === 0) {
       // Segurança extra: se a API de horários vier vazia, peça para selecionar novamente
-      return "❌ Horários indisponíveis. Selecione outra data da lista.";
+      return "❌ Horários indisponíveis para essa data. Selecione outra data da lista.";
     }
 
     let mensagem = `🕒 *Horários disponíveis para ${dataSelecionada}:*\n\n`;
@@ -1621,8 +1675,10 @@ async function handleEscolhendoData(phone, message) {
       const numEmoji = numeroParaEmoji(index + 1);
       mensagem += `${numEmoji} - ${horario}\n`;
     });
+    const numVoltar = numeroParaEmoji(horarios.length + 1);
+    mensagem += `\n${numVoltar} - VOLTAR E ESCOLHER OUTRA DATA`;
 
-    mensagem += "\nDigite o número do horário desejado:";
+    mensagem += "\n\nDigite o número do horário desejado:";
     context.horariosDisponiveis = horarios;
     setContext(phone, context);
     setState(phone, 'escolhendo_horario');
@@ -1641,7 +1697,40 @@ async function handleEscolhendoData(phone, message) {
 // 🕐 Escolhendo horário
 async function handleEscolhendoHorario(phone, message) {
   const context = getContext(phone);
+  const msgLower = (message || '').toLowerCase().trim();
   const opcao = parseInt(message);
+
+  // Voltar por texto
+  if (msgLower === 'voltar') {
+    setState(phone, 'escolhendo_data');
+    const dias = Array.isArray(context.datasDisponiveis) ? context.datasDisponiveis : [];
+    if (!dias.length) return "🔙 Voltando. Digite 'Menu' para recomeçar.";
+    let lista = "📅 *Datas disponíveis para consulta:*\n\n";
+    dias.forEach((d, i) => {
+      const numEmoji = numeroParaEmoji(i + 1);
+      lista += `${numEmoji} - ${d.data}\n`;
+    });
+    const numMais = numeroParaEmoji(dias.length + 1);
+    lista += `\n${numMais} - VER MAIS DATAS`;
+    lista += "\n\nDigite o número da opção desejada.";
+    return lista;
+  }
+
+  // Voltar por opção numerada (último item)
+  if (Array.isArray(context.horariosDisponiveis) && opcao === context.horariosDisponiveis.length + 1) {
+    setState(phone, 'escolhendo_data');
+    const dias = Array.isArray(context.datasDisponiveis) ? context.datasDisponiveis : [];
+    if (!dias.length) return "🔙 Voltando. Digite 'Menu' para recomeçar.";
+    let lista = "📅 *Datas disponíveis para consulta:*\n\n";
+    dias.forEach((d, i) => {
+      const numEmoji = numeroParaEmoji(i + 1);
+      lista += `${numEmoji} - ${d.data}\n`;
+    });
+    const numMais = numeroParaEmoji(dias.length + 1);
+    lista += `\n${numMais} - VER MAIS DATAS`;
+    lista += "\n\nDigite o número da opção desejada.";
+    return lista;
+  }
 
   if (!context.horariosDisponiveis || isNaN(opcao) || opcao < 1 || opcao > context.horariosDisponiveis.length) {
     return (
