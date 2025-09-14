@@ -937,7 +937,10 @@ async function handleAguardandoCpf(phone, message) {
         const numEmoji = numeroParaEmoji(index + 1);
         msgDatas += `${numEmoji} - ${data.data}\n`;
       });
-      msgDatas += "\nDigite o número da data desejada.\n\nDigite *mais* para ver datas mais pra frente.";
+      // opção extra para avançar mês
+      const numMais = numeroParaEmoji(dias.length + 1);
+      msgDatas += `\n${numMais} - VER MAIS DATAS`;
+      msgDatas += "\n\nDigite o número da opção desejada.";
 
       context.datasDisponiveis = dias;
       context.mesListando = `${mes}/${ano}`;
@@ -1294,7 +1297,9 @@ async function handleConfirmandoPaciente(phone, message) {
               mensagem += `${numEmoji} - ${data.data}\n`;
             });
 
-            mensagem += "\nDigite o número da data desejada.\n\nDigite *mais* para ver datas mais pra frente.";
+            const numMais = numeroParaEmoji(dias.length + 1);
+            mensagem += `\n${numMais} - VER MAIS DATAS`;
+            mensagem += "\n\nDigite o número da opção desejada.";
 
             // Salva as opções no contexto para uso posterior
             context.datasDisponiveis = dias;
@@ -1568,6 +1573,12 @@ async function handleEscolhendoData(phone, message) {
   }
 
   const opcao = parseInt(message);
+
+  // Se escolheu o número da opção "VER MAIS DATAS"
+  if (Array.isArray(context.datasDisponiveis) && opcao === context.datasDisponiveis.length + 1) {
+    // Aciona o mesmo comportamento do comando "mais"
+    return await handleEscolhendoData(phone, 'mais');
+  }
 
   if (!context.datasDisponiveis || isNaN(opcao) || opcao < 1 || opcao > context.datasDisponiveis.length) {
     return (
