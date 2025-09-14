@@ -1022,6 +1022,7 @@ async function handleAguardandoCpf(phone, message) {
         msgDatas2 += "\n\nDigite o número da opção desejada.";
 
         context.datasDisponiveis = diasComHorarioProx;
+        context.horariosPorData = {}; // limpa cache
         const ref = getMesAnoDeDataBR(inicioProxMes);
         context.mesListando = `${String(ref.mes).padStart(2,'0')}/${ref.ano}`;
         setContext(phone, context);
@@ -1042,6 +1043,7 @@ async function handleAguardandoCpf(phone, message) {
       msgDatas += "\n\nDigite o número da opção desejada.";
 
       context.datasDisponiveis = diasComHorario;
+      context.horariosPorData = {}; // limpa cache
       context.mesListando = `${mes}/${ano}`;
       setContext(phone, context);
 
@@ -1503,6 +1505,7 @@ async function handleConfirmandoAgendamento(phone, message) {
   const messageLower = message.toLowerCase().trim();
 
   switch (messageLower) {
+    case '1':
     case 'confirmar':
       try {
         // Validar se o contexto está completo
@@ -1586,6 +1589,7 @@ async function handleConfirmandoAgendamento(phone, message) {
         return "❌ Erro ao agendar consulta. Tente novamente mais tarde.";
       }
 
+    case '2':
     case 'alterar':
       setState(phone, 'escolhendo_data');
       return (
@@ -1597,6 +1601,7 @@ async function handleConfirmandoAgendamento(phone, message) {
         "\n\nDigite o número da data desejada:"
       );
 
+    case '3':
     case 'cancelar':
       setState(phone, 'menu_principal');
       setContext(phone, {});
@@ -1622,9 +1627,10 @@ async function handleConfirmandoAgendamento(phone, message) {
         `👤 Tipo: *${context.tipo_consulta}*\n\n` +
         "Deseja confirmar o agendamento?\n\n" +
         "Digite:\n" +
-        "✅ *confirmar* para concluir\n" +
-        "✏️ *alterar* para modificar\n" +
-        "❌ *cancelar* para encerrar"
+        "1️⃣ Confirmar\n" +
+        "2️⃣ Alterar\n" +
+        "3️⃣ Cancelar\n\n" +
+        "Ou envie: *confirmar*, *alterar* ou *cancelar*."
       );
   }
 }
@@ -1707,6 +1713,10 @@ async function handleEscolhendoData(phone, message) {
     // Consulta à API oficial usando função segura
     let horarios = await buscarHorariosDisponiveis(context.token, dataSelecionada);
     horarios = filterHorariosPorExpediente(dataSelecionada, Array.isArray(horarios) ? horarios : []);
+    if ((!horarios || horarios.length === 0) && context.horariosPorData && Array.isArray(context.horariosPorData[dataSelecionada])) {
+      // usa backup calculado na fase de listagem, se existir
+      horarios = context.horariosPorData[dataSelecionada];
+    }
 
     if (!horarios || horarios.length === 0) {
       // Segurança extra: se a API de horários vier vazia, peça para selecionar novamente
@@ -1821,9 +1831,10 @@ async function handleEscolhendoHorario(phone, message) {
       `👤 Tipo: *${tipoConsulta}*\n\n` +
       "Deseja confirmar o agendamento?\n\n" +
       "Digite:\n" +
-      "✅ *confirmar* para concluir\n" +
-      "✏️ *alterar* para modificar\n" +
-      "❌ *cancelar* para encerrar"
+      "1️⃣ Confirmar\n" +
+      "2️⃣ Alterar\n" +
+      "3️⃣ Cancelar\n\n" +
+      "Ou envie: *confirmar*, *alterar* ou *cancelar*."
     );
 
   } catch (error) {
