@@ -121,44 +121,24 @@ app.post('/webhook', webhookLimiter, async (req, res) => {
     // Processa o fluxo da conversa usando o flowController
     const resposta = await flowController(userMessage, userPhone);
 
-    // Se o fluxo decidir não responder (null/undefined/empty), não enviar mensagem
-    if (!resposta) {
+    // Normaliza para permitir múltiplas mensagens na mesma resposta
+    const respostas = Array.isArray(resposta) ? resposta.filter(Boolean) : [resposta];
+
+    if (respostas.length === 0) {
       console.log('🤫 Fluxo retornou vazio. Nenhuma resposta será enviada.');
       return res.status(200).send('ok');
     }
 
-    console.log(`📤 Enviando resposta para ${userPhone}:`, resposta);
-
-    // Envia a resposta via Z-API
-    await zapiService.sendMessage(userPhone, resposta);
-
-    // Log saída: grava sempre, com proteção simples contra duplicidade imediata
-    try {
-      if (supabase && userPhone && resposta) {
-        // Verifica a última mensagem de saída para evitar duplicar imediatamente
-        const { data: lastRows } = await supabase
-          .from('messages')
-          .select('id, content, created_at')
-          .eq('phone', userPhone)
-          .eq('direction', 'out')
-          .order('created_at', { ascending: false })
-          .limit(1);
-        const last = Array.isArray(lastRows) && lastRows.length > 0 ? lastRows[0] : null;
-        let shouldInsert = true;
-        if (last) {
-          const sameContent = (last.content || '') === resposta;
-          const lastTs = new Date(last.created_at).getTime();
-          const nowTs = Date.now();
-          if (sameContent && (nowTs - lastTs) < 3000) {
-            shouldInsert = false;
-          }
+    for (const outMsg of respostas) {
+      console.log(`📤 Enviando resposta para ${userPhone}:`, outMsg);
+      await zapiService.sendMessage(userPhone, outMsg);
+      try {
+        if (supabase && userPhone && outMsg) {
+          await supabase.from('messages').insert({ phone: userPhone, direction: 'out', content: outMsg });
         }
-        if (shouldInsert) {
-          await supabase.from('messages').insert({ phone: userPhone, direction: 'out', content: resposta });
-        }
+      } catch (e) {
+        console.warn('[Supabase] Falha ao logar mensagem de saída:', e.message);
       }
-    } catch (e) {
-      console.warn('[Supabase] Falha ao logar mensagem de saída:', e.message);
     }
 
     res.status(200).send('Mensagem processada com sucesso');

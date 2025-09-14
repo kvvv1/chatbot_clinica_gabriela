@@ -865,16 +865,18 @@ async function handleAguardandoCpf(phone, message) {
         );
       }
 
-      let mensagem = "📅 *Datas disponíveis para consulta:*\n\n";
+      const msgConfirmacao = `✅ *CPF ${message} encontrado no sistema!*`;
+
+      let msgDatas = "📅 *Datas disponíveis para consulta:*\n\n";
       dias.forEach((data, index) => {
-        mensagem += `*${index + 1}* - ${data.data}\n`;
+        msgDatas += `*${index + 1}* - ${data.data}\n`;
       });
-      mensagem += "\nDigite o número da data desejada:";
+      msgDatas += "\nDigite o número da data desejada:";
 
       context.datasDisponiveis = dias;
       setContext(phone, context);
 
-      return mensagem;
+      return [msgConfirmacao, msgDatas];
     } catch (error) {
       console.error("Erro ao buscar datas disponíveis:", error);
       return (
