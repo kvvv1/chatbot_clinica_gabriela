@@ -941,28 +941,32 @@ async function handleAguardandoCpf(phone, message) {
         : diasAll;
 
       // mantém apenas dias com horários disponíveis
-      dias = await filtrarDiasComHorarios(dias, context.token);
+      let diasComHorario = await filtrarDiasComHorarios(dias, context.token);
+      // fallback: se não sobrar nenhum, mostra os disponíveis mesmo assim
+      if (!diasComHorario || diasComHorario.length === 0) {
+        diasComHorario = dias;
+      }
 
-      if (!dias || dias.length === 0) {
+      if (!diasComHorario || diasComHorario.length === 0) {
         return (
           "❌ Nenhuma data disponível no momento.\n\n" +
-          "Tente novamente mais tarde ou digite *menu* para voltar ao início."
+          "Tente novamente mais tarde ou digite *'Menu'* para voltar ao início."
         );
       }
 
       const msgConfirmacao = `✅ *CPF ${message} encontrado no sistema!*`;
 
       let msgDatas = "📅 *Datas mais próximas disponíveis para consulta:*\n\n";
-      dias.forEach((data, index) => {
+      diasComHorario.forEach((data, index) => {
         const numEmoji = numeroParaEmoji(index + 1);
         msgDatas += `${numEmoji} - ${data.data}\n`;
       });
       // opção extra para avançar mês
-      const numMais = numeroParaEmoji(dias.length + 1);
+      const numMais = numeroParaEmoji(diasComHorario.length + 1);
       msgDatas += `\n${numMais} - VER MAIS DATAS`;
       msgDatas += "\n\nDigite o número da opção desejada.";
 
-      context.datasDisponiveis = dias;
+      context.datasDisponiveis = diasComHorario;
       context.mesListando = `${mes}/${ano}`;
       setContext(phone, context);
 
@@ -1303,29 +1307,32 @@ async function handleConfirmandoPaciente(phone, message) {
                 })
               : diasAll;
 
-            // mantém apenas dias com horários disponíveis
-            dias = await filtrarDiasComHorarios(dias, context.token);
+            // mantém apenas dias com horários disponíveis (com fallback)
+            let diasComHorario = await filtrarDiasComHorarios(dias, context.token);
+            if (!diasComHorario || diasComHorario.length === 0) {
+              diasComHorario = dias;
+            }
 
-            if (!dias || dias.length === 0) {
+            if (!diasComHorario || diasComHorario.length === 0) {
               return (
                 "❌ Nenhuma data disponível no momento.\n\n" +
-                "Tente novamente mais tarde ou digite *menu* para voltar ao início."
+                "Tente novamente mais tarde ou digite *'Menu'* para voltar ao início."
               );
             }
 
             // Monta a lista de opções (com emojis e opção de mais)
             let mensagem = "📅 *Datas mais próximas disponíveis para consulta:*\n\n";
-            dias.forEach((data, index) => {
+            diasComHorario.forEach((data, index) => {
               const numEmoji = numeroParaEmoji(index + 1);
               mensagem += `${numEmoji} - ${data.data}\n`;
             });
 
-            const numMais = numeroParaEmoji(dias.length + 1);
+            const numMais = numeroParaEmoji(diasComHorario.length + 1);
             mensagem += `\n${numMais} - VER MAIS DATAS`;
             mensagem += "\n\nDigite o número da opção desejada.";
 
             // Salva as opções no contexto para uso posterior
-            context.datasDisponiveis = dias;
+            context.datasDisponiveis = diasComHorario;
             context.mesListando = `${mes}/${ano}`;
             setContext(phone, context);
 
