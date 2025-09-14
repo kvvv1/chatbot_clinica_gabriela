@@ -385,6 +385,23 @@ async function buscarHorariosDisponiveis(token, dataSelecionada) {
   }
 }
 
+// 🔎 Filtra dias mantendo somente aqueles com horários disponíveis
+async function filtrarDiasComHorarios(dias, token) {
+  if (!Array.isArray(dias) || !dias.length) return [];
+  const resultado = [];
+  for (const d of dias) {
+    try {
+      const horarios = await buscarHorariosDisponiveis(token, d.data);
+      if (Array.isArray(horarios) && horarios.length > 0) {
+        resultado.push(d);
+      }
+    } catch (e) {
+      // ignora datas com erro ao buscar horários
+    }
+  }
+  return resultado;
+}
+
 // 📋 Função para buscar última consulta do paciente
 async function buscarUltimaConsulta(cpf, token) {
   try {
@@ -638,7 +655,7 @@ async function handleAguardandoNome(phone, message) {
       "⏳ *Lista de Espera*\n\n" +
       `✅ ${context.nome}, você foi adicionado(a) à lista de espera!\n` +
       "Entraremos em contato quando houver vaga.\n\n" +
-      "Digite *menu* para voltar ao início."
+      "Digite *'Menu'* para voltar ao início."
     );
   }
 
@@ -676,7 +693,7 @@ async function handleAguardandoNome(phone, message) {
       return (
         `✅ Nome registrado: *${context.nome}*\n\n` +
         "👩‍💼 Seu atendimento foi direcionado para a secretária. Por favor, aguarde.\n\n" +
-        "Digite *menu* para voltar ao início."
+        "Digite *'Menu'* para voltar ao início."
       );
     }
   }
@@ -916,12 +933,15 @@ async function handleAguardandoCpf(phone, message) {
       const ano = String(hoje.getFullYear());
       const dataInicial = `${dia}/${mes}/${ano}`;
       const diasAll = await buscarDatasDisponiveis(context.token, dataInicial);
-      const dias = Array.isArray(diasAll)
+      let dias = Array.isArray(diasAll)
         ? diasAll.filter((d) => {
             const ma = getMesAnoDeDataBR(d.data);
             return ma && ma.mes === (hoje.getMonth() + 1) && ma.ano === hoje.getFullYear();
           })
         : diasAll;
+
+      // mantém apenas dias com horários disponíveis
+      dias = await filtrarDiasComHorarios(dias, context.token);
 
       if (!dias || dias.length === 0) {
         return (
@@ -1276,12 +1296,15 @@ async function handleConfirmandoPaciente(phone, message) {
             const ano = String(hoje.getFullYear());
             const dataInicial = `${dia}/${mes}/${ano}`;
             const diasAll = await buscarDatasDisponiveis(context.token, dataInicial);
-            const dias = Array.isArray(diasAll)
+            let dias = Array.isArray(diasAll)
               ? diasAll.filter((d) => {
                   const ma = getMesAnoDeDataBR(d.data);
                   return ma && ma.mes === (hoje.getMonth() + 1) && ma.ano === hoje.getFullYear();
                 })
               : diasAll;
+
+            // mantém apenas dias com horários disponíveis
+            dias = await filtrarDiasComHorarios(dias, context.token);
 
             if (!dias || dias.length === 0) {
               return (
@@ -1312,7 +1335,7 @@ async function handleConfirmandoPaciente(phone, message) {
             console.error("Erro ao buscar datas disponíveis:", error);
             return (
               "❌ Ocorreu um erro ao buscar as datas disponíveis.\n" +
-              "Por favor, tente novamente mais tarde ou digite *menu* para retornar ao início."
+              "Por favor, tente novamente mais tarde ou digite *'Menu'* para retornar ao início."
             );
           }
 
@@ -1322,7 +1345,7 @@ async function handleConfirmandoPaciente(phone, message) {
             "❌ *Cancelamento de Consulta*\n\n" +
             "Por favor, entre em contato com a recepção.\n" +
             "Telefone: +55 31 98600-3666\n\n" +
-            "Digite *menu* para voltar ao início."
+            "Digite *'Menu'* para voltar ao início."
           );
 
         case 'lista_espera':
@@ -1538,16 +1561,19 @@ async function handleEscolhendoData(phone, message) {
       })());
       const dataInicioProxMes = primeiroDiaDoProximoMes(ref.mes, ref.ano);
       const diasAll = await buscarDatasDisponiveis(context.token, dataInicioProxMes);
-      const dias = Array.isArray(diasAll) ? diasAll.filter((d) => {
+      let dias = Array.isArray(diasAll) ? diasAll.filter((d) => {
         const ma = getMesAnoDeDataBR(d.data);
         const prox = getMesAnoDeDataBR(dataInicioProxMes);
         return ma && prox && ma.mes === prox.mes && ma.ano === prox.ano;
       }) : diasAll;
 
+      // mantém apenas dias com horários disponíveis
+      dias = await filtrarDiasComHorarios(dias, context.token);
+
       if (!dias || dias.length === 0) {
         return (
           "❌ Não há mais datas disponíveis no momento.\n\n" +
-          "Digite *menu* para voltar ao início ou escolha uma das datas já listadas."
+          "Digite *'Menu'* para voltar ao início ou escolha uma das datas já listadas."
         );
       }
 
@@ -1712,7 +1738,7 @@ function handleEstadoFinal(phone, message) {
     return handleMenuPrincipal(phone, 'menu');
   } else {
     return (
-      "Digite *menu* para acessar o menu principal."
+      "Digite *'Menu'* para acessar o menu principal."
     );
   }
 }
@@ -1959,7 +1985,7 @@ async function flowController(message, phone) {
         return (
           "👩‍💼 *Aguardando atendimento da secretária*\n\n" +
           "Sua solicitação foi registrada e uma secretária irá atendê-lo em breve.\n\n" +
-          "Digite *menu* para voltar ao início ou aguarde o contato da secretária."
+          "Digite *'Menu'* para voltar ao início ou aguarde o contato da secretária."
         );
 
       case 'agendamento_confirmado':
@@ -2057,7 +2083,7 @@ async function selecionarAgendamentoParaEditar(message, context, phone) {
   if (isNaN(index) || index < 0 || index >= lista.length) {
     return (
       "❌ Número inválido. Tente novamente digitando o número do agendamento.\n\n" +
-      "Digite *menu* para voltar ao início."
+      "Digite *'Menu'* para voltar ao início."
     );
   }
 
@@ -2094,7 +2120,7 @@ async function decidirAcaoAgendamento(message, context, phone) {
     return (
       "📆 Envie a nova data no formato *dd/mm/aaaa* para reagendar:\n\n" +
       "Exemplo: 25/12/2024\n\n" +
-      "Digite *menu* para voltar ao início."
+      "Digite *'Menu'* para voltar ao início."
     );
   }
 
@@ -2107,7 +2133,7 @@ async function decidirAcaoAgendamento(message, context, phone) {
     return (
       "❌ Cancelamento solicitado.\n\n" +
       "Uma secretária entrará em contato em breve.\n\n" +
-      "Digite *menu* para voltar ao início."
+      "Digite *'Menu'* para voltar ao início."
     );
   }
 
@@ -2195,7 +2221,7 @@ async function handleAguardandoAcaoAgendamento(phone, message) {
 
   if (!agendamento) {
     await salvarEstado(phone, 'finalizado');
-    return '⚠️ Ocorreu um erro ao recuperar seu agendamento. Digite *menu* para recomeçar.';
+    return '⚠️ Ocorreu um erro ao recuperar seu agendamento. Digite *\'Menu\'* para recomeçar.';
   }
 
   if (message === '1') {
@@ -2290,7 +2316,7 @@ async function handleOpcaoReagendarCancelar(phone, message) {
     delete context.agendamentoSelecionado;
     delete context.agendamentosListados;
     setContext(phone, context);
-    return '🔙 Você voltou ao menu. Digite *menu* para visualizar as opções novamente.';
+    return '🔙 Você voltou ao menu. Digite *\'Menu\'* para visualizar as opções novamente.';
   } else {
     return '❌ Opção inválida. Digite 1 para Reagendar, 2 para Cancelar ou 3 para Voltar.';
   }
@@ -2354,7 +2380,7 @@ async function listarAgendamentosPorCPFComEdicao(context, phone) {
       return (
         "📋 *Seus Agendamentos*\n\n" +
         "❌ Nenhum agendamento encontrado para este CPF.\n\n" +
-        "Digite *menu* para voltar ao início."
+        "Digite *'Menu'* para voltar ao início."
       );
     }
 
@@ -2406,7 +2432,7 @@ async function listarAgendamentosPorCPFComEdicao(context, phone) {
     setState(phone, 'aguardando_agendamento_para_acao');
 
     mensagem += "Digite o número do agendamento que você deseja modificar (ex: 1, 2, 3...).\n\n";
-    mensagem += "Digite *menu* para voltar ao início.";
+    mensagem += "Digite *'Menu'* para voltar ao início.";
 
     return mensagem;
 
