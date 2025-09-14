@@ -940,12 +940,8 @@ async function handleAguardandoCpf(phone, message) {
           })
         : diasAll;
 
-      // mantém apenas dias com horários disponíveis
+      // mantém apenas dias com horários disponíveis (sem fallback)
       let diasComHorario = await filtrarDiasComHorarios(dias, context.token);
-      // fallback: se não sobrar nenhum, mostra os disponíveis mesmo assim
-      if (!diasComHorario || diasComHorario.length === 0) {
-        diasComHorario = dias;
-      }
 
       if (!diasComHorario || diasComHorario.length === 0) {
         return (
@@ -1307,11 +1303,8 @@ async function handleConfirmandoPaciente(phone, message) {
                 })
               : diasAll;
 
-            // mantém apenas dias com horários disponíveis (com fallback)
+            // mantém apenas dias com horários disponíveis (sem fallback)
             let diasComHorario = await filtrarDiasComHorarios(dias, context.token);
-            if (!diasComHorario || diasComHorario.length === 0) {
-              diasComHorario = dias;
-            }
 
             if (!diasComHorario || diasComHorario.length === 0) {
               return (
@@ -1629,15 +1622,14 @@ async function handleEscolhendoData(phone, message) {
     const horarios = await buscarHorariosDisponiveis(context.token, dataSelecionada);
 
     if (!horarios || horarios.length === 0) {
-      return (
-        "❌ Nenhum horário disponível para essa data.\n\n" +
-        "Escolha outra data ou digite *menu* para voltar ao início."
-      );
+      // Segurança extra: se a API de horários vier vazia, peça para selecionar novamente
+      return "❌ Horários indisponíveis. Selecione outra data da lista.";
     }
 
     let mensagem = `🕒 *Horários disponíveis para ${dataSelecionada}:*\n\n`;
     horarios.forEach((horario, index) => {
-      mensagem += `*${index + 1}* - ${horario}\n`;
+      const numEmoji = numeroParaEmoji(index + 1);
+      mensagem += `${numEmoji} - ${horario}\n`;
     });
 
     mensagem += "\nDigite o número do horário desejado:";
