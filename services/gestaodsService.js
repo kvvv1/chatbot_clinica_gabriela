@@ -16,13 +16,16 @@ async function verificarPaciente(token, cpf) {
   }
 }
 
-async function buscarDiasDisponiveis(token) {
+async function buscarDiasDisponiveis(token, data) {
   try {
     const url = `${BASE_URL}/api/agendamento/dias-disponiveis/${token}`;
-    const response = await axios.get(url);
+    const params = data ? { data } : undefined;
+    console.log('[GestãoDS] GET dias-disponiveis:', { url, params });
+    const response = await axios.get(url, { params });
+    console.log('[GestãoDS] dias-disponiveis resposta (preview):', Array.isArray(response.data?.data) ? `itens: ${response.data.data.length}` : typeof response.data);
     return response.data;
   } catch (error) {
-    console.error('[GestãoDS] Erro ao buscar dias disponíveis:', error.message);
+    console.error('[GestãoDS] Erro ao buscar dias disponíveis:', error.response?.data || error.message);
     throw new Error('Erro ao consultar dias disponíveis');
   }
 }

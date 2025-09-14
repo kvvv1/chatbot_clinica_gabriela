@@ -283,9 +283,9 @@ function validarContextoAgendamento(context) {
 }
 
 // 🔍 Função para buscar datas disponíveis de forma segura
-async function buscarDatasDisponiveis(token) {
+async function buscarDatasDisponiveis(token, dataInicial) {
   try {
-    const diasResponse = await gestaodsService.buscarDiasDisponiveis(token);
+    const diasResponse = await gestaodsService.buscarDiasDisponiveis(token, dataInicial);
 
     const dias = Array.isArray(diasResponse?.data)
       ? diasResponse.data
@@ -872,7 +872,7 @@ async function handleAguardandoCpf(phone, message) {
 
       // Busca todas as datas e pagina localmente
       const pagina = Number.isInteger(context.paginaDatas) ? context.paginaDatas : 0;
-      const diasAll = await buscarDatasDisponiveis(context.token);
+      const diasAll = await buscarDatasDisponiveis(context.token, undefined);
       const dias = Array.isArray(diasAll) ? diasAll.slice(pagina * PAGE_SIZE_DATAS, (pagina + 1) * PAGE_SIZE_DATAS) : diasAll;
 
       if (!dias || dias.length === 0) {
@@ -1221,7 +1221,7 @@ async function handleConfirmandoPaciente(phone, message) {
 
             // Consulta todas as datas e pagina localmente
             const pagina = Number.isInteger(context.paginaDatas) ? context.paginaDatas : 0;
-            const diasAll = await buscarDatasDisponiveis(context.token);
+            const diasAll = await buscarDatasDisponiveis(context.token, undefined);
             const dias = Array.isArray(diasAll) ? diasAll.slice(pagina * PAGE_SIZE_DATAS, (pagina + 1) * PAGE_SIZE_DATAS) : diasAll;
 
             if (!dias || dias.length === 0) {
@@ -1470,7 +1470,10 @@ async function handleEscolhendoData(phone, message) {
     try {
       // avança a página (marcador lógico)
       const paginaAtual = Number.isInteger(context.paginaDatas) ? context.paginaDatas : 0;
-      const diasAll = await buscarDatasDisponiveis(context.token);
+      const ultimaData = Array.isArray(context.datasDisponiveis) && context.datasDisponiveis.length > 0
+        ? context.datasDisponiveis[context.datasDisponiveis.length - 1].data
+        : undefined;
+      const diasAll = await buscarDatasDisponiveis(context.token, ultimaData);
       const proximaPagina = paginaAtual + 1;
       const dias = Array.isArray(diasAll) ? diasAll.slice(proximaPagina * PAGE_SIZE_DATAS, (proximaPagina + 1) * PAGE_SIZE_DATAS) : diasAll;
 
