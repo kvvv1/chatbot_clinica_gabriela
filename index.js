@@ -45,6 +45,40 @@ app.get('/', (req, res) => {
 const painelRouter = require('./routes/painel');
 app.use('/api/painel', painelRouter);
 
+// In-memory anti-flood controls
+const userLocks = new Map(); // phone -> boolean (processing lock)
+const userQueues = new Map(); // phone -> array of pending messages (strings)
+const debounceTimers = new Map(); // phone -> timeout handle
+const lastMessageIds = new Map(); // phone -> Set of recent ids/hashes
+const DEBOUNCE_MS = 1200; // 1.2s debounce window per user
+const DEDUPE_TTL_MS = 5 * 60 * 1000; // 5 min
+
+function getRecentSet(phone) {
+  if (!lastMessageIds.has(phone)) {
+    lastMessageIds.set(phone, new Map()); // id -> timestamp
+  }
+  return lastMessageIds.get(phone);
+}
+
+function sweepOldIds(phone) {
+  const map = getRecentSet(phone);
+  const now = Date.now();
+  for (const [id, ts] of map.entries()) {
+    if (now - ts > DEDUPE_TTL_MS) map.delete(id);
+  }
+}
+
+function simpleHash(s) {
+  try {
+    let h = 2166136261;
+    for (let i = 0; i < s.length; i++) {
+      h ^= s.charCodeAt(i);
+      h += (h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24);
+    }
+    return String(h >>> 0);
+  } catch { return String(Math.random()); }
+}
+
 // Rota de webhook para receber mensagens do Z-API
 app.post('/webhook', webhookLimiter, async (req, res) => {
   try {
@@ -127,8 +161,18 @@ app.post('/webhook', webhookLimiter, async (req, res) => {
       console.warn('[Silence-Check] Erro ao verificar atendimento humano:', e.message);
     }
 
-    // Processa o fluxo da conversa usando o flowController
-    // Injeta o nome no contexto global do usuário (best effort)
+    // Idempotência: usa id do provedor se disponível, senão hash conteúdo+timestamp aproximado
+    const providerId = data?.id || data?.messageId || data?.key?.id;
+    const dedupeKey = providerId ? String(providerId) : `${userPhone}:${simpleHash(userMessage)}:${data?.timestamp || data?.t || ''}`;
+    const recent = getRecentSet(userPhone);
+    sweepOldIds(userPhone);
+    if (recent.has(dedupeKey)) {
+      console.log('🛑 Duplicata detectada. Ignorando processamento.', { dedupeKey });
+      return res.status(200).send('ok');
+    }
+    recent.set(dedupeKey, Date.now());
+
+    // Injeta nome no contexto global (best effort)
     try {
       if (displayName) {
         const { setContext } = require('./services/flowController');
@@ -136,32 +180,57 @@ app.post('/webhook', webhookLimiter, async (req, res) => {
       }
     } catch {}
 
-    const resposta = await flowController(userMessage, userPhone);
+    // Enfileira a mensagem e aplica debounce por usuário
+    if (!userQueues.has(userPhone)) userQueues.set(userPhone, []);
+    userQueues.get(userPhone).push(userMessage);
 
-    // Normaliza para permitir múltiplas mensagens na mesma resposta
-    const respostas = Array.isArray(resposta) ? resposta.filter(Boolean) : [resposta];
+    // Limpa e reprograma o debounce
+    if (debounceTimers.has(userPhone)) clearTimeout(debounceTimers.get(userPhone));
+    debounceTimers.set(userPhone, setTimeout(async () => {
+      // Captura todas as mensagens acumuladas e mantém somente a última para processar
+      const queue = userQueues.get(userPhone) || [];
+      userQueues.set(userPhone, []);
+      const latestMessage = queue.length > 0 ? queue[queue.length - 1] : userMessage;
 
-    if (respostas.length === 0) {
-      console.log('🤫 Fluxo retornou vazio. Nenhuma resposta será enviada.');
-      return res.status(200).send('ok');
-    }
-
-    for (const outMsg of respostas) {
-      console.log(`📤 Enviando resposta para ${userPhone}:`, outMsg);
-      await zapiService.sendMessage(userPhone, outMsg);
-      try {
-        if (supabase && userPhone && outMsg) {
-          await supabase.from('messages').insert({ phone: userPhone, direction: 'out', content: outMsg });
-        }
-      } catch (e) {
-        console.warn('[Supabase] Falha ao logar mensagem de saída:', e.message);
+      // Lock por usuário para evitar corrida entre callbacks
+      if (userLocks.get(userPhone)) {
+        // Se já estiver processando, recoloca a última e agenda novo debounce curto
+        userQueues.get(userPhone).push(latestMessage);
+        debounceTimers.set(userPhone, setTimeout(() => {}, DEBOUNCE_MS));
+        return;
       }
-    }
 
-    res.status(200).send('Mensagem processada com sucesso');
+      userLocks.set(userPhone, true);
+      try {
+        const resposta = await flowController(latestMessage, userPhone);
+        const respostas = Array.isArray(resposta) ? resposta.filter(Boolean) : [resposta];
+        if (respostas.length === 0) {
+          console.log('🤫 Fluxo retornou vazio. Nenhuma resposta será enviada.');
+        } else {
+          for (const outMsg of respostas) {
+            console.log(`📤 Enviando resposta para ${userPhone}:`, outMsg);
+            await zapiService.sendMessage(userPhone, outMsg);
+            try {
+              if (supabase && userPhone && outMsg) {
+                await supabase.from('messages').insert({ phone: userPhone, direction: 'out', content: outMsg });
+              }
+            } catch (e) {
+              console.warn('[Supabase] Falha ao logar mensagem de saída:', e.message);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('❌ Erro no processamento debounced:', err);
+      } finally {
+        userLocks.set(userPhone, false);
+      }
+    }, DEBOUNCE_MS));
+
+    // Respondemos imediatamente para evitar retry do provedor
+    return res.status(200).send('ok');
   } catch (error) {
     console.error('❌ Erro no webhook:', error);
-    res.status(500).send('Erro interno do servidor');
+    return res.status(500).send('Erro interno do servidor');
   }
 });
 
