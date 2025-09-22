@@ -575,18 +575,19 @@ async function visualizarAgendamentosPorNome(nomePaciente, userPhone) {
 
     const nomeBuscaNorm = normalizeName(nomePaciente);
 
+    // Matching por tokens (ordem livre): todos os tokens do nome buscado devem existir no nome do paciente
+    const searchTokens = nomeBuscaNorm.split(' ').filter(Boolean);
     const agendamentosFiltrados = agendamentosArray.filter(item => {
       const pacienteNome = normalizeName(item.paciente?.nome || '');
       if (!pacienteNome) return false;
 
+      // Igualdade exata após normalização
       if (pacienteNome === nomeBuscaNorm) return true;
 
-      // parcial só se a busca tiver pelo menos duas palavras (evita matches muito genéricos)
-      if (nomeBuscaNorm.split(' ').length >= 2) {
-        if (pacienteNome.includes(nomeBuscaNorm) || nomeBuscaNorm.includes(pacienteNome)) return true;
-      }
-
-      return false;
+      // Token match (ordem livre): exige que todos os tokens buscados apareçam no nome do paciente
+      const pacienteTokens = pacienteNome.split(' ').filter(Boolean);
+      if (searchTokens.length === 0) return false;
+      return searchTokens.every(tok => pacienteTokens.includes(tok));
     });
 
     if (agendamentosFiltrados.length === 0) {
