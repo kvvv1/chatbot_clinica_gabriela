@@ -1719,7 +1719,9 @@ async function handleEscolhendoData(phone, message) {
         const numEmoji = numeroParaEmoji(index + 1);
         msgDatas += `${numEmoji} - ${data.data}\n`;
       });
-      msgDatas += "\nDigite o número da data desejada.\n\nDigite *mais* para ver ainda mais datas.";
+      const numMais = numeroParaEmoji(diasComHorario.length + 1);
+      msgDatas += `\n${numMais} - VER MAIS DATAS`;
+      msgDatas += "\n\nDigite o número da opção desejada.";
 
       const prox = getMesAnoDeDataBR(dataInicioProxMes);
       // Mescla datas e horários com o que já havia no contexto
