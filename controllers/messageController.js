@@ -15,8 +15,11 @@ exports.handleIncomingMessage = async (req, res) => {
     // Processa o fluxo da conversa usando o flowController
     const resposta = await flowController(userMessage, userPhone);
 
-    // Envia mensagem ao usuário
-    await zapiService.sendMessage(userPhone, resposta);
+    // Normaliza e envia (suporta múltiplas mensagens)
+    const respostas = Array.isArray(resposta) ? resposta.filter(Boolean) : [resposta];
+    for (const outMsg of respostas) {
+      await zapiService.sendMessage(userPhone, outMsg);
+    }
 
     res.status(200).send('Mensagem processada');
   } catch (err) {

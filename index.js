@@ -70,6 +70,15 @@ app.post('/webhook', webhookLimiter, async (req, res) => {
 
     const userMessage = typeof userMessageRaw === 'string' ? userMessageRaw.trim() : '';
 
+    // Tenta extrair o nome exibido do WhatsApp (Z-API geralmente envia em contact.name, pushName ou senderName)
+    const displayName =
+      data?.contact?.name ||
+      data?.pushName ||
+      data?.senderName ||
+      data?.notifyName ||
+      data?.profile?.name ||
+      undefined;
+
     console.log('🔍 Dados extraídos:', { userPhone, userMessage });
     // Log entrada (somente se habilitado)
     if (LOG_MESSAGES === 'all') {
@@ -119,6 +128,14 @@ app.post('/webhook', webhookLimiter, async (req, res) => {
     }
 
     // Processa o fluxo da conversa usando o flowController
+    // Injeta o nome no contexto global do usuário (best effort)
+    try {
+      if (displayName) {
+        const { setContext } = require('./services/flowController');
+        setContext(userPhone, { waName: displayName });
+      }
+    } catch {}
+
     const resposta = await flowController(userMessage, userPhone);
 
     // Normaliza para permitir múltiplas mensagens na mesma resposta

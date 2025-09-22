@@ -334,16 +334,17 @@ function calcularTipoConsulta(ultimaDataConsulta) {
 }
 
 // ✅ Função para determinar saudação baseada no horário
-function obterSaudacao() {
+function obterSaudacao(displayName) {
   const agora = new Date();
   const hora = agora.getHours();
+  const nomeParte = displayName ? `, ${displayName}` : '';
   
   if (hora >= 6 && hora < 12) {
-    return "🌅 Bom dia! Bem-vindo(a) à Clínica Dra. Gabriela Nassif! 🏥";
+    return `🌅 Bom dia${nomeParte}! Bem-vindo(a) à Clínica Dra. Gabriela Nassif! 🏥`;
   } else if (hora >= 12 && hora < 18) {
-    return "☀️ Boa tarde! Bem-vindo(a) à Clínica Dra. Gabriela Nassif! 🏥";
+    return `☀️ Boa tarde${nomeParte}! Bem-vindo(a) à Clínica Dra. Gabriela Nassif! 🏥`;
   } else {
-    return "🌙 Boa noite! Bem-vindo(a) à Clínica Dra. Gabriela Nassif! 🏥";
+    return `🌙 Boa noite${nomeParte}! Bem-vindo(a) à Clínica Dra. Gabriela Nassif! 🏥`;
   }
 }
 
@@ -589,7 +590,10 @@ async function visualizarAgendamentosPorNome(nomePaciente, userPhone) {
     });
 
     if (agendamentosFiltrados.length === 0) {
-      return '📭 Você não possui agendamentos nos próximos 90 dias.';
+      return (
+        "📭 Não encontramos agendamentos para este nome.\n\n" +
+        "Por favor, revise seu *NOME COMPLETO* e tente novamente."
+      );
     }
 
     if (userPhone) {
@@ -764,6 +768,8 @@ async function handleAguardandoNome(phone, message) {
 // 🌅 Estado inicial - handle_inicio
 function handleInicio(phone, message) {
   const messageLower = message.toLowerCase().trim();
+  const ctx = getContext(phone);
+  const displayName = ctx?.waName || ctx?.nome;
 
   // Detectar comandos relacionados a agendamentos
   if (messageLower.includes('agendamento') || messageLower.includes('agendamentos') ||
@@ -775,8 +781,8 @@ function handleInicio(phone, message) {
     setContext(phone, { acao: 'visualizar' });
     return (
       "📋 Visualizar Agendamentos\n\n" +
-      "Por favor, digite seu *nome completo* para vermos seus agendamentos.\n\n" +
-      "Digite *voltar* para retornar ao menu principal."
+      "Por favor, digite seu *NOME COMPLETO* para vermos seus agendamentos.\n\n" +
+      "Digite *'voltar'* para retornar ao menu principal."
     );
   }
 
@@ -793,7 +799,7 @@ function handleInicio(phone, message) {
     setState(phone, 'menu_principal');
 
     const resposta = (
-      obterSaudacao() + "\n\n" +
+      obterSaudacao(displayName) + "\n\n" +
       "Sou seu assistente virtual.\n\n" +
       "*Digite o número da opção desejada:*\n\n" +
       "1️⃣ *Agendar consulta*\n" +
@@ -806,7 +812,7 @@ function handleInicio(phone, message) {
     return resposta;
   } else {
     return (
-      obterSaudacao() + "\n\n" +
+      obterSaudacao(displayName) + "\n\n" +
       "Digite *oi* para começar o atendimento e ver as opções disponíveis.\n\n" +
       "💡 *Dica:* Você também pode digitar \"meus agendamentos\" para ver suas consultas diretamente."
     );
@@ -816,6 +822,8 @@ function handleInicio(phone, message) {
 // 📋 Menu principal
 function handleMenuPrincipal(phone, message) {
   const messageLower = message.toLowerCase().trim();
+  const ctx = getContext(phone);
+  const displayName = ctx?.waName || ctx?.nome;
 
   // Detectar comandos de texto relacionados a agendamentos
   if (messageLower.includes('agendamento') || messageLower.includes('agendamentos') ||
@@ -827,15 +835,15 @@ function handleMenuPrincipal(phone, message) {
     setContext(phone, { acao: 'visualizar' });
     return (
       "📋 Visualizar Agendamentos\n\n" +
-      "Por favor, digite seu *nome completo* para vermos seus agendamentos.\n\n" +
-      "Digite *voltar* para retornar ao menu principal."
+      "Por favor, digite seu *NOME COMPLETO* para vermos seus agendamentos.\n\n" +
+      "Digite *'voltar'* para retornar ao menu principal."
     );
   }
 
   switch (message) {
     case 'menu':
       return (
-        obterSaudacao() + "\n\n" +
+        obterSaudacao(displayName) + "\n\n" +
         "Sou seu assistente virtual.\n\n" +
         "*Digite o número da opção desejada:*\n\n" +
         "1️⃣ Agendar consulta\n" +
@@ -860,8 +868,8 @@ function handleMenuPrincipal(phone, message) {
       setContext(phone, { acao: 'visualizar' });
       return (
         "📋 Visualizar Agendamentos\n\n" +
-        "Por favor, digite seu *nome completo* para vermos seus agendamentos.\n\n" +
-        "Digite *'voltar'* para retornar ao menu principal."
+      "Por favor, digite seu *NOME COMPLETO* para vermos seus agendamentos.\n\n" +
+      "Digite *'voltar'* para retornar ao menu principal."
       );
 
     case '3':
@@ -869,8 +877,8 @@ function handleMenuPrincipal(phone, message) {
       setContext(phone, { acao: 'lista_espera' });
       return (
         "⏳ *Lista de Espera*\n\n" +
-        "Por favor, digite seu *nome completo* para adicionar à lista de espera:\n\n" +
-        "Digite *voltar* para retornar ao menu principal."
+      "Por favor, digite seu *NOME COMPLETO* para adicionar à lista de espera:\n\n" +
+      "Digite *'voltar'* para retornar ao menu principal."
       );
 
     case '4':
@@ -878,12 +886,16 @@ function handleMenuPrincipal(phone, message) {
       // Pede o nome antes de abrir ticket, para organizar no painel
       setContext(phone, { acao: 'secretaria', foraHorario: !isBusinessHours });
       setState(phone, 'aguardando_nome');
+       if (!isBusinessHours) {
+        return (
+          "No momento, nosso atendimento não está disponível. Favor digitar seu *NOME COMPLETO* que assim que possível entraremos em contato.\n\n" +
+          "Caso contrário, digite *'Voltar'* para retornar ao menu principal."
+        );
+      }
       return (
         "👩‍💼 *Atendimento com a Secretária*\n\n" +
-        "Por favor, digite seu *nome completo* para direcionarmos seu atendimento.\n\n" +
-        (isBusinessHours
-          ? "Assim que recebermos seu nome, a secretária dará continuidade ao atendimento.\n\nDigite *voltar* para retornar ao menu."
-          : "Estamos fora do horário de atendimento, mas vamos registrar seu pedido e a secretária entrará em contato assim que possível.\n\nDigite *voltar* para retornar ao menu.")
+        "Por favor, digite seu *NOME COMPLETO* para direcionarmos seu atendimento.\n\n" +
+        "Assim que recebermos seu nome, a secretária dará continuidade ao atendimento.\n\nDigite *'voltar'* para retornar ao menu."
       );
 
     case '0':
@@ -930,11 +942,11 @@ async function handleAguardandoCpf(phone, message) {
 
     if (!paciente) {
       setState(phone, 'aguardando_nome');
-      return (
-        "❌ CPF não encontrado no sistema!\n\n" +
-        "Por favor, digite seu nome completo para cadastro:\n\n" +
-        "Digite *voltar* para tentar outro CPF."
-      );
+    return (
+      "❌ CPF não encontrado no sistema!\n\n" +
+      "Por favor, digite seu *NOME COMPLETO* para cadastro:\n\n" +
+      "Digite *'voltar'* para tentar outro CPF."
+    );
     }
 
     // Paciente encontrado - extrai dados reais da API
@@ -1600,7 +1612,9 @@ async function handleConfirmandoAgendamento(phone, message) {
         const msg1 = (
           "✅ *Agendamento realizado com sucesso!*\n\n" +
           `📅 Data: ${context.dataSelecionada}\n` +
-          `⏰ Horário: ${context.horaSelecionada}`
+          `⏰ Horário: ${context.horaSelecionada}\n\n` +
+          "A clínica agradece seu contato.\n\n" +
+          "Se precisar de algo mais, digite *'Menu'* a qualquer momento."
         );
         const msg2 = handleMenuPrincipal(phone, 'menu');
         try { await logMessageToSupabase(phone, 'out', msg1); } catch {}
@@ -2176,10 +2190,10 @@ async function flowController(message, phone) {
     console.error(`❌ Erro no flowController para ${phone}:`, error);
     setState(phone, 'inicio');
     setContext(phone, {});
-    return (
-      "❌ Erro no sistema. Voltando ao início...\n\n" +
-      "Digite *oi* para começar novamente."
-    );
+    return [
+      "❌ Erro no sistema. Voltando ao início...",
+      handleInicio(phone, 'oi')
+    ];
   }
 }
 
@@ -2634,5 +2648,6 @@ async function listarAgendamentosPorCPFComEdicao(context, phone) {
 module.exports = {
   flowController,
   FlowController,
-  visualizarAgendamentosPorNome
+  visualizarAgendamentosPorNome,
+  setContext
 }; 
