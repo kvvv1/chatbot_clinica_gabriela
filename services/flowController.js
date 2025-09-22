@@ -1093,7 +1093,7 @@ async function handleAguardandoCpf(phone, message) {
       `Você digitou: ${message}\n` +
       `CPF deve ter exatamente 11 dígitos APENAS numéricos, sem pontos.\n` +
       "Exemplo: 12345678901\n\n" +
-      "Digite *voltar* para retornar ao menu principal."
+      "Digite *'voltar'* para retornar ao menu principal."
     );
   }
 }
@@ -1612,7 +1612,9 @@ async function handleConfirmandoAgendamento(phone, message) {
         const msg1 = (
           "✅ *Agendamento realizado com sucesso!*\n\n" +
           `📅 Data: ${context.dataSelecionada}\n` +
-          `⏰ Horário: ${context.horaSelecionada}\n\n` +
+          `⏰ Horário: ${context.horaSelecionada}\n` +
+          `👤 Tipo: ${context.tipo_consulta || 'Consulta'}\n` +
+          `📍 Endereço: Av. do Contorno, 4747 - Serra\n\n` +
           "A clínica agradece seu contato.\n\n" +
           "Se precisar de algo mais, digite *'Menu'* a qualquer momento."
         );
@@ -1640,19 +1642,14 @@ async function handleConfirmandoAgendamento(phone, message) {
 
     case '3':
     case 'cancelar':
-      setState(phone, 'menu_principal');
+      setState(phone, 'inicio');
       setContext(phone, {});
       createNotification({ type: 'agendamento', title: 'Agendamento cancelado', message: `Usuário ${phone} cancelou etapa de confirmação.` });
-      const outMsg = (
-        "❌ Agendamento cancelado.\n\n" +
-        "Voltando ao menu principal...\n\n" +
-        "Digite *1* para agendar uma consulta\n" +
-        "Digite *2* para ver meus agendamentos\n" +
-        "Digite *3* para lista de espera\n" +
-        "Digite *4* para falar com secretária"
-      );
-      try { await logMessageToSupabase(phone, 'out', outMsg); } catch {}
-      return outMsg;
+      try { await logMessageToSupabase(phone, 'out', '❌ Agendamento cancelado.'); } catch {}
+      return [
+        '❌ Agendamento cancelado.',
+        handleInicio(phone, 'oi')
+      ];
 
     default:
       return (
