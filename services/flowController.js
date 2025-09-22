@@ -1403,13 +1403,17 @@ async function handleConfirmandoPaciente(phone, message) {
                 })
               : diasAll;
 
-            // mantém apenas dias com "disponivel" true (sem pré-checar horários)
+            // mantém apenas dias que realmente possuem horários dentro do expediente
             let diasComHorario = [];
+            const horariosPorData = {};
             for (const d of dias) {
               try {
                 const horariosDia = await buscarHorariosDisponiveis(context.token, d.data);
                 const ok = filterHorariosPorExpediente(d.data, Array.isArray(horariosDia) ? horariosDia : []);
-                if (ok.length > 0) diasComHorario.push(d);
+                if (ok.length > 0) {
+                  diasComHorario.push(d);
+                  horariosPorData[d.data] = ok;
+                }
               } catch {}
             }
 
@@ -1433,6 +1437,7 @@ async function handleConfirmandoPaciente(phone, message) {
 
             // Salva as opções no contexto para uso posterior
             context.datasDisponiveis = diasComHorario;
+            context.horariosPorData = horariosPorData;
             context.mesListando = `${mes}/${ano}`;
             setContext(phone, context);
 
@@ -1592,16 +1597,14 @@ async function handleConfirmandoAgendamento(phone, message) {
 
         setState(phone, 'agendamento_confirmado');
 
-        const outMsg = (
+        const msg1 = (
           "✅ *Agendamento realizado com sucesso!*\n\n" +
           `📅 Data: ${context.dataSelecionada}\n` +
-          `⏰ Horário: ${context.horaSelecionada}\n` +
-          `📌 Tipo: ${context.tipo_consulta}\n\n` +
-          "A clínica agradece seu contato. 👩‍⚕️🩺\n" +
-          "Se precisar de algo mais, digite *menu* a qualquer momento."
+          `⏰ Horário: ${context.horaSelecionada}`
         );
-        try { await logMessageToSupabase(phone, 'out', outMsg); } catch {}
-        return outMsg;
+        const msg2 = handleMenuPrincipal(phone, 'menu');
+        try { await logMessageToSupabase(phone, 'out', msg1); } catch {}
+        return [msg1, msg2];
 
       } catch (erro) {
         console.error("❌ Erro ao agendar consulta:", erro.message);
@@ -1611,14 +1614,15 @@ async function handleConfirmandoAgendamento(phone, message) {
     case '2':
     case 'alterar':
       setState(phone, 'escolhendo_data');
-      return (
-        "✏️ Ok! Vamos alterar os dados.\n\n" +
-        "📅 *Datas disponíveis para consulta:*\n\n" +
-        context.datasDisponiveis.map((data, index) =>
-          `*${index + 1}* - ${data.data}`
-        ).join('\n') +
-        "\n\nDigite o número da data desejada:"
-      );
+      return [
+        "✏️ Ok! Vamos alterar os dados.",
+        ("📅 *Datas disponíveis para consulta:*\n\n" +
+          context.datasDisponiveis.map((data, index) => {
+            const numEmoji = numeroParaEmoji(index + 1);
+            return `${numEmoji} - ${data.data}`;
+          }).join('\n') +
+          "\n\nDigite o número da data desejada:")
+      ];
 
     case '3':
     case 'cancelar':
@@ -1678,10 +1682,21 @@ async function handleEscolhendoData(phone, message) {
         return ma && prox && ma.mes === prox.mes && ma.ano === prox.ano;
       }) : diasAll;
 
-      // mantém apenas dias com "disponivel" true
-      // (pré-filtrado anteriormente; mantém como está)
+      // Filtra para manter apenas dias que realmente possuem horários dentro do expediente
+      let diasComHorario = [];
+      const horariosPorDataNovos = {};
+      for (const d of (Array.isArray(dias) ? dias : [])) {
+        try {
+          const horariosDia = await buscarHorariosDisponiveis(context.token, d.data);
+          const ok = filterHorariosPorExpediente(d.data, Array.isArray(horariosDia) ? horariosDia : []);
+          if (ok.length > 0) {
+            diasComHorario.push(d);
+            horariosPorDataNovos[d.data] = ok;
+          }
+        } catch {}
+      }
 
-      if (!dias || dias.length === 0) {
+      if (!diasComHorario || diasComHorario.length === 0) {
         return (
           "❌ Não há mais datas disponíveis no momento.\n\n" +
           "Digite *'Menu'* para voltar ao início ou escolha uma das datas já listadas."
@@ -1689,14 +1704,16 @@ async function handleEscolhendoData(phone, message) {
       }
 
       let msgDatas = "📅 *Mais datas disponíveis para consulta:*\n\n";
-      dias.forEach((data, index) => {
+      diasComHorario.forEach((data, index) => {
         const numEmoji = numeroParaEmoji(index + 1);
         msgDatas += `${numEmoji} - ${data.data}\n`;
       });
       msgDatas += "\nDigite o número da data desejada.\n\nDigite *mais* para ver ainda mais datas.";
 
       const prox = getMesAnoDeDataBR(dataInicioProxMes);
-      context.datasDisponiveis = dias;
+      // Mescla datas e horários com o que já havia no contexto
+      context.datasDisponiveis = diasComHorario;
+      context.horariosPorData = { ...(context.horariosPorData || {}), ...horariosPorDataNovos };
       context.mesListando = `${String(prox.mes).padStart(2,'0')}/${prox.ano}`;
       setContext(phone, context);
       return msgDatas;
