@@ -13,7 +13,8 @@ const { isValidCPF, formatCPF } = require('../utils/validations');
 const INACTIVITY_MINUTES = 60;
 
 // ⏳ Encerramento automático após resposta sem agendamentos (em minutos)
-const AUTO_CLOSE_MINUTES = Number(process.env.AUTO_CLOSE_MINUTES || 3);
+// Por padrão, usa o mesmo tempo da inatividade global (1h), podendo ser sobrescrito por env
+const AUTO_CLOSE_MINUTES = Number(process.env.AUTO_CLOSE_MINUTES || INACTIVITY_MINUTES || 60);
 const AUTO_CLOSE_MS = Math.max(1, AUTO_CLOSE_MINUTES) * 60 * 1000;
 
 // Controla timers de encerramento por usuário
