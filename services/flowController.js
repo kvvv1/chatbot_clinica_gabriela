@@ -3,10 +3,50 @@ const { supabase } = require('./supabaseClient');
 const axios = require('axios');
 const moment = require('moment');
 const dayjs = require('dayjs');
+const zapiService = require('./zapiService');
 const { buscarPacientePorCPF, buscarDadosDetalhadosPaciente } = require('../utils/buscarPaciente');
 const gestaodsService = require('./gestaodsService');
 const { cadastrarPacienteNoGestao } = require('./apiGestaoService');
 const { isValidCPF, formatCPF } = require('../utils/validations');
+
+// ⏰ Configuração de inatividade fixa (em minutos)
+const INACTIVITY_MINUTES = 60;
+
+// ⏳ Encerramento automático após resposta sem agendamentos (em minutos)
+const AUTO_CLOSE_MINUTES = Number(process.env.AUTO_CLOSE_MINUTES || 3);
+const AUTO_CLOSE_MS = Math.max(1, AUTO_CLOSE_MINUTES) * 60 * 1000;
+
+// Controla timers de encerramento por usuário
+const autoCloseTimers = new Map(); // phone -> Timeout
+
+function clearAutoClose(phone) {
+  const t = autoCloseTimers.get(phone);
+  if (t) {
+    clearTimeout(t);
+    autoCloseTimers.delete(phone);
+  }
+}
+
+function scheduleAutoClose(phone, delayMs) {
+  try {
+    clearAutoClose(phone);
+    const handle = setTimeout(async () => {
+      try {
+        setState(phone, 'inicio');
+        setContext(phone, {});
+        await zapiService.sendMessage(
+          phone,
+          "👋 Atendimento encerrado automaticamente. Obrigado pelo contato! Digite *'oi'* para começar novamente."
+        );
+      } catch (e) {
+        console.warn('[AutoClose] Falha ao enviar mensagem final:', e?.message || e);
+      } finally {
+        clearAutoClose(phone);
+      }
+    }, delayMs);
+    autoCloseTimers.set(phone, handle);
+  } catch {}
+}
 
 // ✅ Funções auxiliares para gerenciamento de estado e contexto
 async function salvarEstado(userPhone, estado) {
@@ -591,9 +631,16 @@ async function visualizarAgendamentosPorNome(nomePaciente, userPhone) {
     });
 
     if (agendamentosFiltrados.length === 0) {
+      if (userPhone) {
+        // Mantém usuário no fluxo para permitir nova digitação do nome,
+        // mas agenda encerramento automático após o tempo definido
+        try { scheduleAutoClose(userPhone, AUTO_CLOSE_MS); } catch {}
+      }
       return (
         "📭 Não encontramos agendamentos para este nome.\n\n" +
-        "Por favor, revise seu *NOME COMPLETO* e tente novamente."
+        "Por favor, confira se digitou seu *NOME COMPLETO* corretamente e tente novamente.\n\n" +
+        "Se estiver correto, não existe agendamento para este paciente no período consultado.\n\n" +
+        "Digite *'voltar'* para retornar ao menu principal."
       );
     }
 
@@ -727,14 +774,19 @@ async function handleAguardandoNome(phone, message) {
     // Se fora de horário, finaliza e informa. Se dentro, aguarda atendimento humano.
     if (context.foraHorario) {
       setState(phone, 'finalizado');
-      return (
-        `✅ Nome registrado: *${context.nome}*\n\n` +
-        "🕐 *A clínica está fora do horário de atendimento.*\n\n" +
-        "📅 *Horário de Atendimento:*\n" +
-        "Segunda a Sexta, das 8h às 18h\n" +
-        "Sábado, das 8h às 12h\n\n" +
-        "Entraremos em contato assim que o atendimento for retomado."
-      );
+      return [
+        (
+          `✅ Nome registrado: *${context.nome}*\n\n` +
+          "📅 *Horário de Atendimento:*\n" +
+          "Segunda a Sexta, das 8h às 18h\n" +
+          "Sábado, das 8h às 12h\n\n" +
+          "Entraremos em contato assim que o atendimento for retomado."
+        ),
+        (
+          "👩‍💼 Sua solicitação foi encaminhada para a secretária.\n" +
+          "⏰ Seu atendimento foi encerrado."
+        )
+      ];
     } else {
       setState(phone, 'aguardando_atendimento_secretaria');
       return (
@@ -937,9 +989,21 @@ async function handleAguardandoCpf(phone, message) {
     // Persist paciente
     upsertPatient({ cpf: message, name: context.nome, phone, email: context.email });
 
-    // Busca o paciente usando o gestaodsService
+  // Busca o paciente usando o gestaodsService
+  let paciente;
+  try {
     const token = process.env.GESTAODS_TOKEN;
-    const paciente = await gestaodsService.verificarPaciente(token, message);
+    paciente = await gestaodsService.verificarPaciente(token, message);
+  } catch (error) {
+    console.error('[AguardandoCPF] Erro ao verificar CPF:', error?.message || error);
+    setState(phone, 'aguardando_cpf');
+    return (
+      "❌ Erro ao verificar CPF no sistema.\n\n" +
+      "Por favor, digite seu CPF novamente (apenas números):\n\n" +
+      "Exemplo: 12345678901\n\n" +
+      "Ou digite *menu* para voltar ao início."
+    );
+  }
 
     if (!paciente) {
       setState(phone, 'aguardando_nome');
@@ -1094,7 +1158,7 @@ async function handleAguardandoCpf(phone, message) {
       `Você digitou: ${message}\n` +
       `CPF deve ter exatamente 11 dígitos APENAS numéricos, sem pontos.\n` +
       "Exemplo: 12345678901\n\n" +
-      "Digite *'voltar'* para retornar ao menu principal."
+      "Envie seu CPF novamente ou digite *menu* para voltar ao início."
     );
   }
 }
@@ -1931,7 +1995,33 @@ async function flowController(message, phone) {
   console.log(`🧠 Processando mensagem do usuário ${phone} no estado: ${state}`);
   try { await logMessageToSupabase(phone, 'in', message); } catch {}
 
+  // ⏳ Verifica inatividade antes de processar o restante do fluxo
   try {
+    const nowTs = Date.now();
+    const ctx0 = getContext(phone);
+    const lastTs = Number(ctx0.lastInteractionAt || 0);
+    const maxIdleMs = Math.max(1, INACTIVITY_MINUTES) * 60 * 1000;
+
+    if (lastTs && nowTs - lastTs > maxIdleMs) {
+      // Encerra sessão por inatividade e reinicia o fluxo
+      setState(phone, 'inicio');
+      setContext(phone, {});
+      return [
+        `⏰ Seu atendimento foi encerrado por inatividade (mais de ${Math.round((nowTs - lastTs) / 60000)} minutos).`,
+        handleInicio(phone, 'oi')
+      ];
+    }
+
+    // Atualiza timestamp da última interação
+    setContext(phone, { lastInteractionAt: nowTs });
+  } catch (e) {
+    // Em caso de qualquer falha, não bloqueia o fluxo
+  }
+
+  try {
+    // Qualquer nova mensagem cancela um eventual auto-encerramento pendente
+    try { clearAutoClose(phone); } catch {}
+
     // Interceptação global para saudações ou "menu" em qualquer estado
     const messageLowerGlobal = message.toLowerCase().trim();
     const isGreetingGlobal = (
