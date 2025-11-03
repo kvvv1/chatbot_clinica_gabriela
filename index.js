@@ -209,13 +209,30 @@ app.post('/webhook', webhookLimiter, async (req, res) => {
         } else {
           for (const outMsg of respostas) {
             console.log(`📤 Enviando resposta para ${userPhone}:`, outMsg);
-            await zapiService.sendMessage(userPhone, outMsg);
-            try {
-              if (supabase && userPhone && outMsg) {
-                await supabase.from('messages').insert({ phone: userPhone, direction: 'out', content: outMsg });
+            if (outMsg && typeof outMsg === 'object') {
+              if (outMsg.type === 'buttons') {
+                await zapiService.sendButtonsMessage(userPhone, outMsg);
+              } else if (outMsg.type === 'list') {
+                await zapiService.sendListMessage(userPhone, outMsg);
+              } else {
+                await zapiService.sendMessage(userPhone, JSON.stringify(outMsg));
               }
-            } catch (e) {
-              console.warn('[Supabase] Falha ao logar mensagem de saída:', e.message);
+              try {
+                if (supabase && userPhone) {
+                  await supabase.from('messages').insert({ phone: userPhone, direction: 'out', content: JSON.stringify(outMsg) });
+                }
+              } catch (e) {
+                console.warn('[Supabase] Falha ao logar mensagem de saída (obj):', e.message);
+              }
+            } else {
+              await zapiService.sendMessage(userPhone, outMsg);
+              try {
+                if (supabase && userPhone && outMsg) {
+                  await supabase.from('messages').insert({ phone: userPhone, direction: 'out', content: outMsg });
+                }
+              } catch (e) {
+                console.warn('[Supabase] Falha ao logar mensagem de saída:', e.message);
+              }
             }
           }
         }

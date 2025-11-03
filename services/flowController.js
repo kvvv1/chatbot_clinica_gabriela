@@ -9,6 +9,41 @@ const gestaodsService = require('./gestaodsService');
 const { cadastrarPacienteNoGestao } = require('./apiGestaoService');
 const { isValidCPF, formatCPF } = require('../utils/validations');
 
+const USE_INTERACTIVE = process.env.USE_INTERACTIVE === '1' || process.env.USE_INTERACTIVE === 'true';
+
+function buildMainMenuList(displayName) {
+  const header = `${obterSaudacao(displayName)}\n\nSou seu assistente virtual.`;
+  return {
+    type: 'list',
+    text: `${header}\n\nEscolha uma opção:`,
+    buttonText: 'Abrir menu',
+    sections: [
+      {
+        title: 'Opções disponíveis',
+        rows: [
+          { id: 'MENU_1', title: 'Agendar consulta' },
+          { id: 'MENU_2', title: 'Ver meus agendamentos' },
+          { id: 'MENU_3', title: 'Lista de espera' },
+          { id: 'MENU_4', title: 'Falar com secretária' },
+          { id: 'MENU_0', title: 'Sair' }
+        ]
+      }
+    ]
+  };
+}
+
+function buildActionButtons(prefixText) {
+  return {
+    type: 'buttons',
+    text: `${prefixText}\n\nEscolha uma opção:`,
+    buttons: [
+      { id: 'ACT_REAGENDAR', title: 'Reagendar' },
+      { id: 'ACT_CANCELAR', title: 'Cancelar' },
+      { id: 'ACT_VOLTAR', title: 'Voltar' }
+    ]
+  };
+}
+
 // ⏰ Configuração de inatividade fixa (em minutos)
 const INACTIVITY_MINUTES = 60;
 
@@ -852,7 +887,10 @@ function handleInicio(phone, message) {
   ) {
     setState(phone, 'menu_principal');
 
-    const resposta = (
+    if (USE_INTERACTIVE) {
+      return buildMainMenuList(displayName);
+    }
+    return (
       obterSaudacao(displayName) + "\n\n" +
       "Sou seu assistente virtual.\n\n" +
       "*Digite o número da opção desejada:*\n\n" +
@@ -862,8 +900,6 @@ function handleInicio(phone, message) {
       "4️⃣ *Falar com secretária*\n\n" +
       "Digite *0* para sair"
     );
-
-    return resposta;
   } else {
     return (
       obterSaudacao(displayName) + "\n\n" +
@@ -894,8 +930,21 @@ function handleMenuPrincipal(phone, message) {
     );
   }
 
-  switch (message) {
+  const mapMenu = {
+    'agendar consulta': '1',
+    'ver meus agendamentos': '2',
+    'lista de espera': '3',
+    'falar com secretária': '4',
+    'falar com secretaria': '4',
+    'sair': '0'
+  };
+  const routed = mapMenu[messageLower] || message;
+
+  switch (routed) {
     case 'menu':
+      if (USE_INTERACTIVE) {
+        return buildMainMenuList(displayName);
+      }
       return (
         obterSaudacao(displayName) + "\n\n" +
         "Sou seu assistente virtual.\n\n" +
@@ -961,6 +1010,9 @@ function handleMenuPrincipal(phone, message) {
       );
 
     default:
+      if (USE_INTERACTIVE) {
+        return buildMainMenuList(displayName);
+      }
       return (
         "❌ Opção inválida!\n\n" +
         "*Digite o número da opção desejada:*\n\n" +
@@ -2387,7 +2439,7 @@ async function decidirAcaoAgendamento(message, context, phone) {
     );
   }
 
-  if (message === '1') {
+  if (message === '1' || messageLower.includes('reagendar') || message === 'ACT_REAGENDAR') {
     context.estado = "reagendando_nova_data";
     setContext(phone, context);
     return (
@@ -2397,7 +2449,7 @@ async function decidirAcaoAgendamento(message, context, phone) {
     );
   }
 
-  if (message === '2') {
+  if (message === '2' || messageLower.includes('cancelar') || message === 'ACT_CANCELAR') {
     try {
       await insertCancelRequest({ phone, motivo: 'Solicitado via chatbot', status: 'pending' });
       await createNotification({ type: 'cancelamento', title: 'Solicitação de cancelamento', message: `Telefone ${phone}` });
@@ -2410,7 +2462,7 @@ async function decidirAcaoAgendamento(message, context, phone) {
     );
   }
 
-  if (message === '3') {
+  if (message === '3' || messageLower.includes('voltar') || message === 'ACT_VOLTAR') {
     setState(phone, 'inicio');
     setContext(phone, {});
     return (
@@ -2454,6 +2506,10 @@ async function handleAguardandoEscolhaAgendamento(phone, message) {
   setContext(phone, context);
   setState(phone, 'opcao_reagendar_cancelar');
 
+  if (USE_INTERACTIVE) {
+    const prefix = `✅ Você selecionou:\n📅 *${agendamentoSelecionado.data_agendamento}*\n👨‍⚕️ ${agendamentoSelecionado.medico?.nome || 'Médico não informado'}`;
+    return buildActionButtons(prefix);
+  }
   return `✅ Você selecionou:\n📅 *${agendamentoSelecionado.data_agendamento}*\n👨‍⚕️ ${agendamentoSelecionado.medico?.nome || 'Médico não informado'}\n\nDigite:\n1️⃣ Reagendar\n2️⃣ Cancelar\n3️⃣ Voltar`;
 }
 
@@ -2478,6 +2534,10 @@ async function handleAguardandoSelecaoAgendamento(phone, message) {
   await salvarEstado(phone, 'aguardando_acao_agendamento');
   setState(phone, 'aguardando_acao_agendamento');
 
+  if (USE_INTERACTIVE) {
+    const prefix = `Você selecionou o agendamento com *${agendamento.medico}* no dia *${agendamento.data}*.`;
+    return buildActionButtons(prefix);
+  }
   return `Você selecionou o agendamento com *${agendamento.medico}* no dia *${agendamento.data}*.
 
 Deseja:
@@ -2547,7 +2607,12 @@ async function handleAguardandoAcaoAgendamento(phone, message) {
 async function handleOpcaoReagendarCancelar(phone, message) {
   const context = getContext(phone);
   
-  if (message === '1') {
+  const msgLower = String(message).toLowerCase();
+  const isReagendar = message === '1' || msgLower.includes('reagendar') || message === 'ACT_REAGENDAR';
+  const isCancelar = message === '2' || msgLower.includes('cancelar') || message === 'ACT_CANCELAR';
+  const isVoltar = message === '3' || msgLower.includes('voltar') || message === 'ACT_VOLTAR';
+
+  if (isReagendar) {
     try {
       const ag = context.agendamentoSelecionado || {};
       const currentDateTime = ag.data_agendamento || ag.data || ag.current_datetime || null;
@@ -2566,7 +2631,7 @@ async function handleOpcaoReagendarCancelar(phone, message) {
     } catch (e) {}
     setState(phone, 'finalizado');
     return '📅 Solicitação de reagendamento registrada no painel. Em breve a secretária entrará em contato.';
-  } else if (message === '2') {
+  } else if (isCancelar) {
     try {
       const ag = context.agendamentoSelecionado || {};
       const tokenAgendamento = ag.token || ag.agendamento || ag.token_agendamento || null;
@@ -2584,7 +2649,7 @@ async function handleOpcaoReagendarCancelar(phone, message) {
     } catch (e) {}
     setState(phone, 'finalizado');
     return '❌ Solicitação de cancelamento registrada no painel. Em breve a secretária entrará em contato.';
-  } else if (message === '3') {
+  } else if (isVoltar) {
     setState(phone, 'menu_principal');
     delete context.agendamentoSelecionado;
     delete context.agendamentosListados;
