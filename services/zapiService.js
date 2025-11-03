@@ -34,15 +34,14 @@ async function sendTyping(phone, durationMs = 2000) {
 
 async function sendMessage(phone, message) {
   try {
-    // Sinaliza "Digitando" por ~2s antes de enviar
-    await sendTyping(phone, 2000);
-
     // Formato correto da API Z-API
     const url = `https://api.z-api.io/instances/${ZAPI_INSTANCE_ID}/token/${ZAPI_TOKEN}/send-text`;
 
     const payload = {
       phone: phone,
-      message: message
+      message: message,
+      // Exibe estado "Digitando" por ~2s antes de enviar (via Z-API)
+      delayTyping: 2
     };
 
     console.log(`[Z-API] Enviando para: ${url}`);
@@ -89,13 +88,13 @@ async function sendButtonsMessage(phone, options) {
 
     const path = ZAPI_BUTTONS_PATH || 'send-buttons';
     const url = buildZapiUrl(path);
-    // Sinaliza "Digitando" por ~2s antes de enviar
-    await sendTyping(phone, 2000);
     const payload = {
       phone,
       message: options.text,
       buttons: (options.buttons || []).map((b) => ({ id: b.id, text: b.title })),
-      footer: options.footer || undefined
+      footer: options.footer || undefined,
+      // Tenta usar atraso nativo do Z-API (se suportado pelo endpoint)
+      delayTyping: 2
     };
 
     console.log(`[Z-API] Enviando botões para: ${url}`);
@@ -127,13 +126,13 @@ async function sendListMessage(phone, options) {
 
     const path = ZAPI_LIST_PATH || 'send-list';
     const url = buildZapiUrl(path);
-    // Sinaliza "Digitando" por ~2s antes de enviar
-    await sendTyping(phone, 2000);
     const payload = {
       phone,
       message: options.text,
       buttonText: options.buttonText || 'Selecionar',
-      sections: options.sections || []
+      sections: options.sections || [],
+      // Tenta usar atraso nativo do Z-API (se suportado pelo endpoint)
+      delayTyping: 2
     };
 
     console.log(`[Z-API] Enviando lista para: ${url}`);
